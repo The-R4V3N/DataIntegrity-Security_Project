@@ -42,7 +42,6 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 - [Prerequisites](#prerequisites)
 - [Building](#building)
 - [License](#license)
-- [Future of the project](#future)
 
 ### Media
 
@@ -67,7 +66,5 @@ UML Class Diagram
 ### License
 
 This project is licensed under the [GNU License](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/LICENSE).
-
-### Future
 
 ![The-R4V3N](https://github.com/The-R4V3N.png?size=50) More about me can be found on my [Website](https://www.oliver-joisten.se)
