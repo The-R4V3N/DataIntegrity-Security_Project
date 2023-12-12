@@ -1,25 +1,12 @@
-# <div align="center">Hey 👋, I'm The-R4V3N!</div>  
+# Hey 👋, I'm The-R4V3N
 
-----
+## Connect with me  
 
-## <div align="center"> Connect with me  
+[![github](https://img.shields.io/badge/github-%2324292e.svg?&style=flat&logo=github&logoColor=white)](https://github.com/The-R4V3N)
+[![dev.to](https://img.shields.io/badge/dev.to-%2308090A.svg?&style=flat&logo=dev.to&logoColor=white)](https://dev.to/ther4v3n)
+[![linkedin](https://img.shields.io/badge/linkedin-%231E77B5.svg?&style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/oliver-joisten)
+[![facebook](https://img.shields.io/badge/facebook-%232E87FB.svg?&style=flat&logo=facebook&logoColor=white)](https://www.facebook.com/oliver.joisten)
 
-<div align="center">
- <a href="https://github.com/The-R4V3N" target="_blank">
-<img src=https://img.shields.io/badge/github-%2324292e.svg?&style=flat&logo=github&logoColor=white alt=github style="margin-bottom: 5px;" />
-<a href="https://dev.to/ther4v3n" target="_blank">
-<img src=https://img.shields.io/badge/dev.to-%2308090A.svg?&style=flat&logo=dev.to&logoColor=white alt=devto style="margin-bottom: 5px;" />
-</a>
-<a href="https://linkedin.com/in/oliver-joisten" target="_blank">
-<img src=https://img.shields.io/badge/linkedin-%231E77B5.svg?&style=flat&logo=linkedin&logoColor=white alt=linkedin style="margin-bottom: 5px;" />
-</a>
-<a href="https://www.facebook.com/oliver.joisten" target="_blank">
-<img src=https://img.shields.io/badge/facebook-%232E87FB.svg?&style=flat&logo=facebook&logoColor=white alt=facebook style="margin-bottom: 5px;" />
-</a>
-
-</a>  
-</div>
-  
 ## Welcome! Glad to see you here  
 
 ## DataIntegrity-Security_Project
