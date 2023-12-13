@@ -32,15 +32,15 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 ### Media
 
-Project Overview
+- Project Overview
 
 ![Project Overview](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/overview.png)
 
-System Architecture UML Diagram
+- System Architecture UML Diagram
 
 ![System Achitecture](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sytem_architecture.png)
 
-UML Class Diagram
+- UML Class Diagram
 
 ## Features
 
@@ -56,6 +56,11 @@ UML Class Diagram
 
 ### License
 
-This project is licensed under the [GNU License](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/LICENSE).
+- This project is licensed under the [GNU License](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/LICENSE).
+
+## Additional Information
+
+- **Detailed Documentation:**
+Find comprehensive documentation for each module in the `Respective README file` folder.
 
 ![The-R4V3N](https://github.com/The-R4V3N.png?size=50) More about me can be found on my [Website](https://www.oliver-joisten.se)
