@@ -28,6 +28,8 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Building](#building)
+- [Execute](#execute)
+- [Dependencies](#dependencies)
 - [License](#license)
 
 ### Media
@@ -44,15 +46,53 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 ## Features
 
+- This project showcast a secure communication between a client and a server. The client is a desktop application written in Python 3.10.12 and the server is a ESP32 microcontroller written in C++.
+- The communication is secured using the following protocols:
+  - HMAC-SHA256
+  - AES-256
+  - RSA-2048
+
+- The client can send requests to the server and the server will respond to the client's requests.
+- The Following requests are implemented:
+  - Core Temperature reading
+  - LED control
+
+- The server can handle only one client session at a time.
+- The server will reject new client requests when a session is already established.
+- Sessions will expire after 1 minute of inactivity.
+
 ### Prerequisites
+
+- **CMake** version 3.22 or higher
+- **Python 3** with the following librarys: Tkinter, pyserial, python-mbedtls
+- **PlatformIO** (for building and uploading firmware to the ESP32)
 
 ### Building
 
+- **Build the Project:**
+Execute `platformio run` in the server directory to compile the project.
+Or use the Terminal command `cmake .. && make` build directory.
+
+### Execute
+
+-**Run the Project:**
+Execute `platformio run --target upload` to upload the compiled code to the Olimax ESP32-EVB board.
+Or use the Terminal command `./server` in the build directory.
+
 ### Desktop Client and Server
 
-### Firmware for ESP32
+- The Desktop Client  is a Python application with a basic GUI made with Tkinter.
+- The servier is a ESP32 microcontroller that communicates with the client over serial communication.
 
 ### Dependencies
+
+- **PlatformIO:** An ecosystem for IoT development.
+- **C++ Standard Libraries:** For core functionalities.
+- **ESP32-EVB Board Support:** Specific libraries and drivers for the Olimax ESP32-EVB board.
+- **Python 3.10.12:** The core programming language used.
+- **Tkinter:** A Python library for creating the graphical user interface.
+- **Pyserial:** Essential for handling serial communication.
+- **python-mbedtls:** Provides security features like encryption.
 
 ### License
 
