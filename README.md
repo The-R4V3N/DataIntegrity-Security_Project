@@ -63,7 +63,6 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 ### Prerequisites
 
-- **CMake** version 3.22 or higher
 - **Python 3** with the following librarys: Tkinter, pyserial, python-mbedtls
 - **PlatformIO** (for building and uploading firmware to the ESP32)
 
@@ -71,13 +70,11 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 - **Build the Project:**
 Execute `platformio run` in the server directory to compile the project.
-Or use the Terminal command `cmake .. && make` build directory.
 
 ### Execute
 
 -**Run the Project:**
 Execute `platformio run --target upload` to upload the compiled code to the Olimax ESP32-EVB board.
-Or use the Terminal command `./server` in the build directory.
 
 ### Desktop Client and Server
 
