@@ -5,7 +5,7 @@
 
 import tkinter as tk
 from client.lib.gui.gui import GUI
-# from client.lib.comunication.communication import Communication
+from client.lib.communication.communication import SerialCommunication
 # from client.lib.security.security import Security
 
 
@@ -13,6 +13,7 @@ def main():
     root = tk.Tk()
     root.title("Client")
     app = GUI(root)
+    app = SerialCommunication()
     root.mainloop()
 
 
