@@ -65,7 +65,7 @@ class GUI:
             self.root, text="Toggle LED", command=self.toggle_led)
         toggle_led_button.grid(column=4, row=0, sticky='WE')
 
-        clear_label = tk.Label(self.root, text="Clear",
+        clear_label = tk.Label(self.root, text="Clear Log",
                                fg="blue", cursor="hand2")
         clear_label.grid(column=5, row=0, sticky='WE')
         clear_label.bind("<Button-1>", lambda event: self.clear_log())
