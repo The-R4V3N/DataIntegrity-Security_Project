@@ -42,7 +42,9 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 ![System Achitecture](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sytem_architecture.png)
 
-- UML Class Diagram
+- Sequence Diagram
+
+![Sequence Diagram](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sequens_diagram.png)
 
 ## Features
 
