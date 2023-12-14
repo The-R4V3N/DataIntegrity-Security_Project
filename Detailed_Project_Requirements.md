@@ -1,4 +1,3 @@
-
 # Project Requirements
 
 ## Client Side Requirements
