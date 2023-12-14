@@ -10,6 +10,7 @@ from tkinter import ttk
 class GUI:
     def __init__(self, root):
         self.root = root
+        self.root.geometry("700x600")
         self.create_widgets()
 
     def sort_ports(self, ports):
@@ -64,15 +65,17 @@ class GUI:
             self.root, text="Toggle LED", command=self.toggle_led)
         toggle_led_button.grid(column=4, row=0, sticky='WE')
 
-        clear_button = tk.Button(
-            self.root, text="Clear", command=self.clear_log)
-        clear_button.grid(column=5, row=0, sticky='WE')
+        clear_label = tk.Label(self.root, text="Clear",
+                               fg="blue", cursor="hand2")
+        clear_label.grid(column=5, row=0, sticky='WE')
+        clear_label.bind("<Button-1>", lambda event: self.clear_log())
 
         # Create the log text area
         log_label = tk.Label(self.root, text="Log:")
         log_label.grid(column=0, row=1, sticky='W')
 
         self.log_text = scrolledtext.ScrolledText(self.root, height=30)
+        # Adjust columnspan if needed
         self.log_text.grid(column=0, row=2, columnspan=6, sticky='WE')
 
     def establish_session(self):

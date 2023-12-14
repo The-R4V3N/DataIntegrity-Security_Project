@@ -21,7 +21,7 @@
   - A button to toggle the LED on the ESP32 shall be included.
 
 - **Logging and Display:**
-  - A clear text button shall be included to clear logs.
+  - A clear text button or a lable shall be included to clear logs.
   - A read-only textbox shall be included to display temperature, LED state, and other program states.
 
 ### Communication Handling (`communication.py`)
@@ -46,7 +46,18 @@
 
 - **RSA and AES Key Management:**
   - The AES-256 key shall be encrypted and decrypted using the RSA-2048 protocol.
-  - The initialization vector shall be randomly encrypted and decrypted using RSA-2048 and AES-256 protocols, respectively.
+
+- **Session Establishment:**
+  - The server shall generate a random AES-256 key and a random IV(Initialization Vector) and sent it to the client.
+  - The client shall encrypt the AES-256 key and the IV and send it back to the server.
+  - The server shall decrypt the AES-256 key and the IV.
+  - The client shall generate a random Session ID and send it to the server.
+  - The server shall encrypt the Session ID and send it back to the client.
+  - The client shall decrypt the Session ID.
+  - The client shall send a request to the server to establish a session.
+  - The server shall respond to the client's request to establish a session.
+  - The client shall handle and process the server's response.
+  - The server shall be able to detect a invalied Session ID and IV and send a new one to the client.
 
 ## Server Side Requirements
 
@@ -54,7 +65,6 @@
 
 - **Single Session Handling:**
   - The server shall be capable of handling only one client session at a time.
-  - The server shall reject new client requests when a session is already established.
 
 - **Session Expiration:**
   - Sessions shall expire after 1 minute of inactivity.
@@ -92,6 +102,7 @@
 
 - **Comprehensive Documentation:**
   - The project shall include documentation for each module and its functionalities.
+  - The documentation shall include UML Diagrams for the system architecture, sequence diagrams for the communication protocol.
   - Instructions for setup and usage shall be provided.
   - The documentation shall be comprehensive and easy to understand.
 
