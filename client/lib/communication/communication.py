@@ -4,6 +4,7 @@
 import serial
 
 selected_port = "/dev/ttyUSB0"
+boudrate = 115200
 
 
 class SerialCommunication:
@@ -20,7 +21,7 @@ class SerialCommunication:
 
     def serial_read(self):
         # Open the serial port
-        ser = serial.Serial(selected_port, 115200)
+        ser = serial.Serial(selected_port, boudrate)
 
         try:
             while True:

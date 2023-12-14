@@ -1,11 +1,12 @@
 # Autor: Oliver Joisten
 # Desccription: This file contains the graphical user interface module which is used in the client.py file to display the GUI.
 
+import serial
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import ttk
 from client.lib.communication.communication import SerialCommunication
-import serial
+# from client.lib.security.security import Security
 
 selected_port = "/dev/ttyUSB0"
 
