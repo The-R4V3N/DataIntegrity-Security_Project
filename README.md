@@ -70,13 +70,16 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 ### Building
 
-- **Build the Project:**
+- **Build the Server:**
 Execute `platformio run` in the server directory to compile the project.
 
 ### Execute
 
--**Run the Project:**
+-**Run the Server:**
 Execute `platformio run --target upload` to upload the compiled code to the Olimax ESP32-EVB board.
+
+-**Run the Client:**
+Execute `python3 -m client.src.client` in the root directory of the project to start the client application.
 
 ### Desktop Client and Server
 

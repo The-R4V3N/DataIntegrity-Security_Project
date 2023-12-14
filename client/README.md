@@ -41,5 +41,5 @@ To set up the client-side application, follow these steps:
 Once installation is complete, you can start using the client-side application by running the following command in your terminal:
 
 ```bash
-python3 client.py
+python3 python3 -m client.src.client
 ```
