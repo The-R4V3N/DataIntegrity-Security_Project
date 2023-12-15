@@ -44,14 +44,14 @@ class GUI:
         self.disconnect_button.grid(column=2, row=0, sticky='WE', padx=5)
 
         # Create the get temperature button
-        get_temp_button = tk.Button(
-            self.root, text="Get Temperature", command=self.get_temperature)
-        get_temp_button.grid(column=3, row=0, sticky='WE', padx=5)
+        self.get_temp_button = tk.Button(
+            self.root, text="Get Temperature", command=self.get_temperature, state=tk.DISABLED)
+        self.get_temp_button.grid(column=3, row=0, sticky='WE', padx=5)
 
         # Create the toggle led button
-        toggle_led_button = tk.Button(
-            self.root, text="Toggle LED", command=self.toggle_led)
-        toggle_led_button.grid(column=4, row=0, sticky='WE', padx=(5, 5))
+        self.toggle_led_button = tk.Button(
+            self.root, text="Toggle LED", command=self.toggle_led, state=tk.DISABLED)
+        self.toggle_led_button.grid(column=4, row=0, sticky='WE', padx=(5, 5))
 
         # Create the clear log label
         clear_label = tk.Label(self.root, text="Clear Log",
@@ -73,9 +73,13 @@ class GUI:
         if self.serial_comm.is_connected():
             self.disconnect_button.grid(column=2, row=0, sticky='WE', padx=5)
             self.establish_button.grid_remove()
+            self.get_temp_button['state'] = tk.NORMAL
+            self.toggle_led_button['state'] = tk.NORMAL
         else:
             self.establish_button.grid(column=2, row=0, sticky='WE', padx=5)
             self.disconnect_button.grid_remove()
+            self.get_temp_button['state'] = tk.DISABLED
+            self.toggle_led_button['state'] = tk.DISABLED
 
     def establish_session(self):
         port = self.serial_port.get()
