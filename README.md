@@ -44,7 +44,7 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 - Sequence Diagram
 
-![Sequence Diagram](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sequence_diagram.png)
+![Sequence Diagram](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sequence_diagram%20.png)
 
 ## Features
 
