@@ -60,7 +60,6 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
   - LED control
 
 - The server can handle only one client session at a time.
-- The server will reject new client requests when a session is already established.
 - Sessions will expire after 1 minute of inactivity.
 
 ### Prerequisites
