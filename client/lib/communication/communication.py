@@ -4,42 +4,47 @@
 import serial
 
 selected_port = "/dev/ttyUSB0"
-boudrate = 115200
+BAUD_RATE = 115200
 
 
 class SerialCommunication:
     def __init__(self):
         self.serial_connection = None
 
-    def establish_connection(self, port, baudrate=115200):
+    def establish_connection(self, port, BAUD_RATE=115200):
         try:
             self.serial_connection = serial.Serial(
-                port, baudrate=baudrate, timeout=1)
+                port, baudrate=BAUD_RATE, timeout=1)
             return True, f"Session Established on {port}"
         except serial.SerialException as e:
             return False, f"Failed to open port {port}: {e}"
 
-    def serial_read(self):
-        # Open the serial port
-        ser = serial.Serial(selected_port, boudrate)
+    def send_data(self, data):
+        if self.is_connected():
+            try:
+                self.serial_connection.write(data.encode())
+                return True, f"Data sent: {data}"
+            except Exception as e:
+                return False, f"Failed to send data: {e}"
+        else:
+            return False, f"Session not established"
 
-        try:
-            while True:
-                # Read data from the serial port
-                data = ser.readline().decode('utf-8').strip()
-
-            # Print the received data
-            # print("Received:", data)
-
-        except KeyboardInterrupt:
-            # Close the serial port when the program is interrupted (e.g., by pressing Ctrl+C)
-            ser.close()
-            # print("Serial port closed.")
-
-        return data
+    def toggle_led(self):
+        if self.is_connected():
+            try:
+                return self.serial_connection.readline().decode('utf-8').strip()
+            except Exception as e:
+                return f"Error reading from serial: {e}"
+            else:
+                return "Not connected to any serial port"
 
     def is_connected(self):
         return self.serial_connection is not None and self.serial_connection.is_open
+
+    def serial_read(self):
+        if self.serial_connection and self.serial_connection.in_waiting:
+            return self.serial_connection.readline().decode('utf-8').strip()
+        return None
 
     def close_connection(self):
         if self.serial_connection and self.serial_connection.is_open:

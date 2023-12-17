@@ -2,13 +2,13 @@
 # Desccription: This file contains the graphical user interface module which is used in the client.py file to display the GUI.
 
 import serial
+import serial.tools.list_ports
+import threading
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import ttk
 from client.lib.communication.communication import SerialCommunication
 # from client.lib.security.security import Security
-
-selected_port = "/dev/ttyUSB0"
 
 
 class GUI:
@@ -30,7 +30,9 @@ class GUI:
         serial_label = tk.Label(self.root, text="Serial Port:")
         serial_label.grid(column=0, row=0, sticky='W')
 
-        self.serial_port = ttk.Combobox(self.root, values=selected_port)
+        # Get list of available serial ports
+        self.available_ports = self.list_serial_ports()
+        self.serial_port = ttk.Combobox(self.root, values=self.available_ports)
         self.serial_port.grid(column=1, row=0, sticky='WE')
 
         # Create the establish session button
@@ -67,7 +69,28 @@ class GUI:
             self.root, height=30, bg="black", fg="white")
         self.log_text.grid(column=0, row=3, columnspan=5, sticky='WE')
 
+        # disable user editing
+        self.log_text.config(state=tk.DISABLED)
+
         self.update_button_state()
+
+    def system_log(self, message):
+        """
+        Inserts a message into the log text area. This method temporarily
+        enables the text area to insert the message, then disables it.
+        """
+        self.log_text.config(state=tk.NORMAL)  # Temporarily enable
+        self.log_text.insert(tk.END, message + "\n")
+        self.log_text.config(state=tk.DISABLED)  # Disable again
+
+    def list_serial_ports(self):
+        """Lists serial port names
+
+        :returns:
+            A list of the serial ports available on the system
+        """
+        ports = serial.tools.list_ports.comports()
+        return [port.device for port in ports]
 
     def update_button_state(self):
         if self.serial_comm.is_connected():
@@ -85,37 +108,51 @@ class GUI:
         port = self.serial_port.get()
         if port != "":
             success, message = self.serial_comm.establish_connection(port)
-            self.log_text.insert(tk.END, message + "\n")
+            self.system_log(message)
             self.update_button_state()
-
-            ser = serial.Serial(selected_port, 115200)
-            self.log_text.insert(
-                tk.END, "Your data is:" + ser.readline().decode('utf-8').strip()+"\n")
+            # Start a new thread to read data so it doesn't block the GUI
+            threading.Thread(target=self.read_serial_data, daemon=True).start()
         else:
-            self.log_text.insert(
-                tk.END, "No Serial Port Selected!\nPlease select a Serial Port\n")
+            self.system_log(
+                "No Serial Port Selected!\nPlease select a Serial Port")
+
+    def read_serial_data(self):
+        while self.serial_comm.is_connected():
+            data = self.serial_comm.serial_read()
+            if data:
+                # Ensure that we update the GUI from the main thread
+                self.root.after(0, self.system_log, data)
 
     def get_temperature(self):
         if self.serial_port.get() != "":
-            self.log_text.insert(
-                tk.END, "Getting Temperature\n")
+            self.system_log("Getting Temperature")
+            success, message = self.serial_comm.send_data("read_temp")
+            self.system_log(message)
         else:
-            self.log_text.insert(
-                tk.END, "No Serial Port Selected!\nPlease select a Serial Port\n")
+            self.system_log(
+                "No Serial Port Selected or Connection not open!\nPlease select a Serial Port")
 
     def toggle_led(self):
-        if self.serial_port.get() != "":
-            self.log_text.insert(tk.END, "Toggling LED\n")
+        if self.serial_comm.is_connected():
+            self.system_log("Toggling LED")
+            success, message = self.serial_comm.send_data("toggle_led_state")
+            self.system_log(message)
         else:
-            self.log_text.insert(
-                tk.END, "No Serial Port Selected!\nPlease select a Serial Port\n")
+            self.system_log(
+                "No Serial Port Selected or Connection not open!\nPlease select and connect a Serial Port")
 
     def clear_log(self):
+        # Temporarily enable the widget to modify its contents
+        self.log_text.config(state=tk.NORMAL)
+        # Clear the log
         self.log_text.delete('1.0', tk.END)
+
+        # Disable the widget again
+        self.log_text.config(state=tk.DISABLED)
 
     def on_close(self):
         self.serial_comm.close_connection()
-        self.log_text.insert(tk.END, "Session closed\n")
+        self.system_log("Session closed")
         self.update_button_state()
 
 
