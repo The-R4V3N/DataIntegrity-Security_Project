@@ -28,37 +28,38 @@ class GUI:
 
         # Create the dropdown for serial ports
         serial_label = tk.Label(self.root, text="Serial Port:")
-        serial_label.grid(column=0, row=0, sticky='W')
+        serial_label.grid(column=0, row=0, sticky='W', padx=(0, 5))
 
         # Get list of available serial ports
         self.available_ports = self.list_serial_ports()
         self.serial_port = ttk.Combobox(self.root, values=self.available_ports)
-        self.serial_port.grid(column=1, row=0, sticky='WE')
+        self.serial_port.grid(column=1, row=0, sticky='W', padx=(0, 5))
 
         # Create the establish session button
         self.establish_button = tk.Button(
             self.root, text="Establish Session", command=self.establish_session)
-        self.establish_button.grid(column=2, row=0, sticky='WE', padx=5)
+        self.establish_button.grid(column=2, row=0, sticky='W', padx=(0, 5))
 
         # Create the disconnect button
         self.disconnect_button = tk.Button(
             self.root, text="Disconnect Session", command=self.on_close)
-        self.disconnect_button.grid(column=2, row=0, sticky='WE', padx=5)
+        self.disconnect_button.grid(column=2, row=0, sticky='W', padx=(0, 5))
 
         # Create the get temperature button
         self.get_temp_button = tk.Button(
             self.root, text="Get Temperature", command=self.get_temperature, state=tk.DISABLED)
-        self.get_temp_button.grid(column=3, row=0, sticky='WE', padx=5)
+        self.get_temp_button.grid(column=3, row=0, sticky='W', padx=(0, 5))
 
         # Create the toggle led button
         self.toggle_led_button = tk.Button(
             self.root, text="Toggle LED", command=self.toggle_led, state=tk.DISABLED)
-        self.toggle_led_button.grid(column=4, row=0, sticky='WE', padx=(5, 5))
+        self.toggle_led_button.grid(column=4, row=0, sticky='W', padx=(0, 5))
 
         # Create the clear log label
         clear_label = tk.Label(self.root, text="Clear Log",
                                fg="blue", cursor="hand2")
-        clear_label.grid(column=3, row=1, columnspan=2, sticky='E', padx=5)
+        clear_label.grid(column=3, row=1, columnspan=2,
+                         sticky='E', padx=(0, 15))
         clear_label.bind("<Button-1>", lambda event: self.clear_log())
 
         # Create the log text area
@@ -79,9 +80,9 @@ class GUI:
         Inserts a message into the log text area. This method temporarily
         enables the text area to insert the message, then disables it.
         """
-        self.log_text.config(state=tk.NORMAL)  # Temporarily enable
+        self.log_text.config(state=tk.NORMAL)
         self.log_text.insert(tk.END, message + "\n")
-        self.log_text.config(state=tk.DISABLED)  # Disable again
+        self.log_text.config(state=tk.DISABLED)
 
     def list_serial_ports(self):
         """Lists serial port names
@@ -110,7 +111,6 @@ class GUI:
             success, message = self.serial_comm.establish_connection(port)
             self.system_log(message)
             self.update_button_state()
-            # Start a new thread to read data so it doesn't block the GUI
             threading.Thread(target=self.read_serial_data, daemon=True).start()
         else:
             self.system_log(
@@ -120,7 +120,6 @@ class GUI:
         while self.serial_comm.is_connected():
             data = self.serial_comm.serial_read()
             if data:
-                # Ensure that we update the GUI from the main thread
                 self.root.after(0, self.system_log, data)
 
     def get_temperature(self):
@@ -142,9 +141,7 @@ class GUI:
                 "No Serial Port Selected or Connection not open!\nPlease select and connect a Serial Port")
 
     def clear_log(self):
-        # Temporarily enable the widget to modify its contents
         self.log_text.config(state=tk.NORMAL)
-        # Clear the log
         self.log_text.delete('1.0', tk.END)
 
         # Disable the widget again
