@@ -6,6 +6,12 @@
 
 bool LED_is_ON = false;
 
+/**
+ * @brief Initializes the setup for the server.
+ *
+ * This function sets up the serial communication, initializes the LED driver,
+ * initializes the temperature sensor, and sets the LED driver state to low.
+ */
 void setup()
 {
   Serial.begin(BAUD_RATE);
@@ -14,6 +20,12 @@ void setup()
   (void)led_driver_set_state(LED_DRIVER_LOW);
 }
 
+/**
+ * @brief The main loop for the server.
+ *
+ * This function is the main loop for the server. It checks for serial input and
+ * executes the appropriate command.
+ */
 void loop()
 {
   if (Serial.available() > 0)
