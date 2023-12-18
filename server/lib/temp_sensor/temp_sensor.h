@@ -17,6 +17,6 @@ void temp_sensor_init();
  *
  * @return The temperature read from the internal temperature sensor.
  */
-float temp_sensor_read();
+float temperature_sens_read();
 
 #endif // TEMP_SENSOR_H

@@ -1,5 +1,5 @@
 #include "temp_sensor.h"
-#include <esp32-hal.h>
+#include "bsp.h"
 
 /**
  * @brief Initializes the temperature sensor.
@@ -20,5 +20,5 @@ void temp_sensor_init()
  */
 float temp_sensor_read()
 {
-    return temperatureRead();
+    return (temperature_sens_read() - 23) / 1.8;
 }
