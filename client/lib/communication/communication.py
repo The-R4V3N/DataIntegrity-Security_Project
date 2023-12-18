@@ -3,7 +3,6 @@
 
 import serial
 
-selected_port = "/dev/ttyUSB0"
 BAUD_RATE = 115200
 
 
@@ -11,7 +10,7 @@ class SerialCommunication:
     def __init__(self):
         self.serial_connection = None
 
-    def establish_connection(self, port, BAUD_RATE=115200):
+    def establish_connection(self, port, BAUD_RATE=BAUD_RATE, timeout=1):
         try:
             self.serial_connection = serial.Serial(
                 port, baudrate=BAUD_RATE, timeout=1)

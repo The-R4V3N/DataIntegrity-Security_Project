@@ -118,9 +118,12 @@ class GUI:
 
     def read_serial_data(self):
         while self.serial_comm.is_connected():
-            data = self.serial_comm.serial_read()
-            if data:
-                self.root.after(0, self.system_log, data)
+            try:
+                data = self.serial_comm.serial_read()
+                if data:
+                    self.root.after(0, self.system_log, data)
+            except Exception as e:
+                break
 
     def get_temperature(self):
         if self.serial_port.get() != "":
