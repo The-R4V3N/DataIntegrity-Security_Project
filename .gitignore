@@ -5,4 +5,5 @@ client/lib/gui/__pycache__/*
 client/lib/security/__pycache__/*
 client/src/__pycache__/*
 .vscode/*
+server/.vscode/*
 
