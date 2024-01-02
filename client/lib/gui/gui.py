@@ -4,11 +4,13 @@
 import serial
 import serial.tools.list_ports
 import threading
+import traceback
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import ttk
 from client.lib.communication.communication import SerialCommunication
-# from client.lib.security.security import Security
+# encrypt_message_aes256, decrypt_message_aes256
+from client.lib.security.security import hmac_key, aes_key
 
 
 class GUI:
@@ -119,7 +121,7 @@ class GUI:
     def read_serial_data(self):
         while self.serial_comm.is_connected():
             try:
-                data = self.serial_comm.serial_read()
+                data = self.serial_comm.serial_read(hmac_key, aes_key)
                 if data:
                     self.root.after(0, self.system_log, data)
             except Exception as e:
@@ -128,8 +130,15 @@ class GUI:
     def get_temperature(self):
         if self.serial_port.get() != "":
             self.system_log("Getting Temperature")
-            success, message = self.serial_comm.send_data("read_temp")
-            self.system_log(message)
+            success, message = self.serial_comm.send_data(
+                "read_temp", hmac_key, aes_key)
+            encrypted_message = "encrypt_message_aes256(message, secret_key)"
+            if success:
+                self.system_log(
+                    f"Temperature request sent.")
+            else:
+                self.system_log(
+                    f"Failed to send temperature request: {encrypted_message}")
         else:
             self.system_log(
                 "No Serial Port Selected or Connection not open!\nPlease select a Serial Port")
@@ -137,8 +146,16 @@ class GUI:
     def toggle_led(self):
         if self.serial_comm.is_connected():
             self.system_log("Toggling LED")
-            success, message = self.serial_comm.send_data("toggle_led_state")
-            self.system_log(message)
+
+            # Sending the command "toggle_led_state" and getting the encrypted response
+            success, encrypted_message = self.serial_comm.send_data(
+                "toggle_led_state", hmac_key, aes_key)
+            if success:
+                self.system_log(
+                    f"LED toggle request sent.")
+            else:
+                self.system_log(
+                    f"Failed to send LED toggle request: {encrypted_message}")
         else:
             self.system_log(
                 "No Serial Port Selected or Connection not open!\nPlease select and connect a Serial Port")
@@ -160,4 +177,10 @@ class GUI:
 if __name__ == "__main__":
     root = tk.Tk()
     app = GUI(root)
+    root.attributes('-topmost', True)
+    root.update()
+    root.attributes('-topmost', False)
+    root.lift()
+    root.focus_force()
+
     root.mainloop()

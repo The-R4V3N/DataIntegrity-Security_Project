@@ -1,3 +1,4 @@
+#include "security_manager.h"
 #include "Arduino.h"
 #include <esp32-hal.h>
 #include "bsp.h"
@@ -10,12 +11,6 @@
 
 bool LED_is_ON = false;
 
-/**
- * @brief Initializes the setup for the server.
- *
- * This function sets up the serial communication, initializes the LED driver,
- * initializes the temperature sensor, WIFI is used to activate the internal tempsensor otherwhise the tempsensor return always 53.3 degres, and sets the LED driver state to low.
- */
 void setup()
 {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -25,43 +20,87 @@ void setup()
   (void)led_driver_set_state(LED_DRIVER_LOW);
 }
 
-/**
- * @brief The main loop for the server.
- *
- * This function is the main loop for the server. It checks for serial input and
- * executes the appropriate command.
- */
 void loop()
 {
   if (Serial.available() > 0)
   {
-    String command = Serial.readStringUntil('\n');
-    command.trim();
+    String receivedData = Serial.readStringUntil('\n');
+    Serial.println("ESP32 Received data: " + receivedData);
+    Serial.println();
+    receivedData.trim();
 
-    if (command == "toggle_led_state")
+    // Convert String to unsigned char array
+    unsigned char receivedDataBytes[receivedData.length() + 1]; // Ensure enough space for the entire string plus null terminator
+    receivedData.getBytes(receivedDataBytes, receivedData.length() + 1);
+
+    // Decrypt the data
+    unsigned char decryptedData[512]; // Adjust size as needed
+    size_t decryptedDataLength;
+    decrypt_aes256(receivedDataBytes, receivedData.length(), decryptedData, decryptedDataLength, (const unsigned char *)SECRET_KEY);
+    Serial.println("ESP32 Decrypted data:  \n");
+
+    // Convert decrypted data back to String for further processing
+    String decryptedDataStr = String((char *)decryptedData);
+    Serial.println(decryptedDataStr) + "\n";
+
+    // Find the delimiter in the decrypted data
+    int delimiterIndex = decryptedDataStr.lastIndexOf(',');
+
+    if (delimiterIndex == -1)
     {
-      if (LED_is_ON)
+      Serial.println("Delimiter not found in decrypted data.");
+      return; // Exit if no delimiter is found in decrypted data
+    }
+
+    // Split the message into command and HMAC
+    String command = receivedData.substring(0, delimiterIndex);
+    String receivedHmac = receivedData.substring(delimiterIndex + 1);
+
+    Serial.println("ESP32 Received command: " + command) + "\n";
+    Serial.println("ESP32 Received HMAC: " + receivedHmac);
+    +"\n";
+
+    // Convert String to const char* before passing to the functions
+    if (verifyHMAC(command.c_str(), receivedHmac.c_str()))
+    {
+      Serial.println("ESP32 HMAC Verified Successfully") + "\n";
+      String response;
+
+      if (command == "toggle_led_state")
       {
-        led_driver_set_state(LED_DRIVER_LOW);
-        LED_is_ON = false;
-        Serial.println("LED turned off");
+        if (LED_is_ON)
+        {
+          led_driver_set_state(LED_DRIVER_LOW);
+          LED_is_ON = false;
+          response = "LED turned off";
+        }
+        else
+        {
+          led_driver_set_state(LED_DRIVER_HIGH);
+          LED_is_ON = true;
+          response = "LED turned on";
+        }
+      }
+      else if (command == "read_temp")
+      {
+        float temp = temperatureRead();
+        response = "The Core Temperature is: " + String(temp) + " °C";
       }
       else
       {
-        led_driver_set_state(LED_DRIVER_HIGH);
-        LED_is_ON = true;
-        Serial.println("LED turned on");
+        response = "Unknown command";
       }
-    }
-    else if (command == "read_temp")
-    {
-      float temp = temperatureRead();
 
-      Serial.println("The Core Temperature is: " + String(temp) + " °C");
+      Serial.println("Response: " + response);
+
+      // Send response with HMAC
+      String responseHmac = computeHMAC_SHA256(response.c_str());
+      Serial.println("Response HMAC: " + responseHmac) + "\n";
+      Serial.println("Full response to send: " + response + "," + responseHmac) + "\n";
     }
     else
     {
-      Serial.println("Unknown command");
+      Serial.println("Invalid HMAC");
     }
   }
 }

@@ -36,7 +36,7 @@ bool led_driver_set_state(uint8_t state)
     {
         if ((state == LED_DRIVER_HIGH) || (state == LED_DRIVER_LOW))
         {
-            state = (state == LED_DRIVER_HIGH) ? 1 : 0;
+            state = (state == LED_DRIVER_HIGH) ? LED_DRIVER_HIGH : LED_DRIVER_LOW;
 
             bsp_digital_write(pin_num, state);
 
