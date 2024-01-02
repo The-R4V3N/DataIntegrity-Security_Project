@@ -20,12 +20,12 @@ void add_pkcs7_padding(unsigned char *input, size_t &input_len, size_t block_siz
 
 void encrypt_aes256(const unsigned char *input, size_t input_len,
                     unsigned char *output, size_t &output_len,
-                    const unsigned char *key);
+                    const unsigned char *aes_key);
 
 void remove_pkcs7_padding(unsigned char *output, size_t &output_len);
 
 void decrypt_aes256(const unsigned char *input, size_t input_len,
                     unsigned char *output, size_t &output_len,
-                    const unsigned char *key);
+                    const unsigned char *aes_key);
 
 #endif // SECURITYMANAGER_H

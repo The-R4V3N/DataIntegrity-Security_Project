@@ -6,7 +6,6 @@ const char *SECRET_KEY = "Fj2-;wu3Ur=ARl2!Tqi6IuKM3nG]8z1+";
 String bytesToHexString(const unsigned char *data, size_t length)
 {
     String result;
-    Serial.println("ESP32 RESULT:" + result + "\n");
     for (size_t i = 0; i < length; ++i)
     {
         char hex[3];
@@ -75,19 +74,17 @@ void add_pkcs7_padding(unsigned char *input, size_t &input_len, size_t block_siz
 
 void encrypt_aes256(const unsigned char *input, size_t input_len,
                     unsigned char *output, size_t &output_len,
-                    const unsigned char *key)
+                    const unsigned char *aes_key)
 {
     mbedtls_aes_context aes;
     unsigned char iv[16];
 
     // Generate a random IV
     generate_random_bytes(iv, 16); // Assuming generate_random_bytes correctly populates iv with random values
-    Serial.print("ESP32 IV (hex): ") + "\n";
 
     mbedtls_aes_init(&aes);
-    Serial.print("ESP32 AES (hex): ") + "\n";
-    mbedtls_aes_setkey_enc(&aes, key, 256 * 8); // Key length in bits
-    Serial.print("ESP32 AES (hex): ") + "\n";
+
+    mbedtls_aes_setkey_enc(&aes, aes_key, 256 * 8); // Key length in bits
 
     // Apply PKCS7 padding
     unsigned char padded_input[input_len + 16]; // Max padding is 16 bytes
@@ -101,10 +98,12 @@ void encrypt_aes256(const unsigned char *input, size_t input_len,
     mbedtls_aes_free(&aes);
 
     // Debug prints
-    Serial.print("ESP32 IV (hex): ") + "\n";
-    Serial.println(bytesToHexString(iv, 16)) + "\n";
-    Serial.print("ESP32 AES KEY (hex): ") + "\n";
-    Serial.println(bytesToHexString(key, 32)) + "\n";
+    Serial.println("ESP32 AES-KEY:  " + aes_key[16]);
+    Serial.println();
+    Serial.print("ESP32 IV (hex):  \n");
+    Serial.println(bytesToHexString(iv, 16));
+    Serial.print("ESP32 AES KEY (hex): \n");
+    Serial.println(bytesToHexString(aes_key, 32));
 
     // Include IV with the output
     memmove(output + 16, output, output_len); // Move the ciphertext to make space for the IV
@@ -121,7 +120,7 @@ void remove_pkcs7_padding(unsigned char *output, size_t &output_len)
     }
 }
 
-void decrypt_aes256(const unsigned char *input, size_t input_len, unsigned char *output, size_t &output_len, const unsigned char *key)
+void decrypt_aes256(const unsigned char *input, size_t input_len, unsigned char *output, size_t &output_len, const unsigned char *aes_key)
 {
     if (input_len < 16)
     {
@@ -133,7 +132,7 @@ void decrypt_aes256(const unsigned char *input, size_t input_len, unsigned char 
     unsigned char iv[16];
     memcpy(iv, input, 16); // Assuming the first 16 bytes are the IV
     mbedtls_aes_init(&aes);
-    mbedtls_aes_setkey_dec(&aes, key, 256 * 8);                                               // Key length in bits
+    mbedtls_aes_setkey_dec(&aes, aes_key, 256 * 8);                                           // Key length in bits
     mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, input_len - 16, iv, input + 16, output); // Adjust input pointer and length
 
     output_len = input_len - 16;
@@ -144,6 +143,8 @@ void decrypt_aes256(const unsigned char *input, size_t input_len, unsigned char 
     mbedtls_aes_free(&aes);
 
     // Debug prints
+    Serial.println("ESP32 AES-KEY:  " + aes_key[16]);
+    Serial.println();
     Serial.print("ESP32 IV (hex):  \n");
     Serial.println(bytesToHexString(iv, 16)) + "\n";
     Serial.print("ESP32 AES KEY (hex):  \n");

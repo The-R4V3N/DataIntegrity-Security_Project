@@ -42,7 +42,7 @@ def unpad(data):
 
 
 def encrypt_message_aes256(message, aes_key):
-    print("Encryption process started")
+    print("\n Encryption process started")
     print("Type of aes_key:", type(aes_key))
     print("\n")
 
@@ -57,12 +57,18 @@ def encrypt_message_aes256(message, aes_key):
 
     # Create a new AES cipher in CBC mode with PKCS7 padding
     cipher_aes = cipher.AES.new(aes_key, cipher.MODE_CBC, iv)
+    print("IV:", iv)
+    print("\n")
 
     # Encrypt the padded message
     encrypted_message = cipher_aes.encrypt(pad(message, cipher_aes.block_size))
+    print("ENCRYPTED MESSAGE:", encrypted_message)
+    print("\n")
 
     # Convert the encrypted message to hexadecimal
     encrypted_message_hex = encrypted_message.hex()
+    print("HEX ENCRYPTED MESSAGE:", encrypted_message_hex)
+    print("\n")
 
     # Convert the IV to hexadecimal
     iv_hex = iv.hex()

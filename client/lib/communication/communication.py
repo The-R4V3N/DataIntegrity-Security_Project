@@ -33,8 +33,9 @@ class SerialCommunication:
 
                 # Combine data with HMAC
                 full_message = f"{data},{hmac}"
-                print(data, hmac)
+                print("Full_Message: ", full_message + "\n")
                 full_message_bytes = full_message.encode('utf-8')
+                print("FULL MESSAGE BYTES: ", full_message_bytes)
 
                 # Encrypt the message
                 encrypted_message_hex = encrypt_message_aes256(

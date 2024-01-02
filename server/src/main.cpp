@@ -29,15 +29,36 @@ void loop()
     Serial.println();
     receivedData.trim();
 
-    // Convert String to unsigned char array
-    unsigned char receivedDataBytes[receivedData.length() + 1]; // Ensure enough space for the entire string plus null terminator
-    receivedData.getBytes(receivedDataBytes, receivedData.length() + 1);
+    // Convert Hexadecimal String to Byte Array
+    size_t byteLength = receivedData.length() / 2;
+    unsigned char receivedDataBytes[byteLength];
+    for (size_t i = 0; i < byteLength; i++)
+    {
+      String byteString = receivedData.substring(i * 2, (i * 2) + 2);
+      receivedDataBytes[i] = (unsigned char)strtol(byteString.c_str(), NULL, 16);
+    }
+
+    // Print the received byte array for debugging
+    Serial.print("ESP32 Received data (bytes): ");
+    for (size_t i = 0; i < byteLength; i++)
+    {
+      Serial.printf("%02x", receivedDataBytes[i]);
+    }
+    Serial.println();
 
     // Decrypt the data
     unsigned char decryptedData[512]; // Adjust size as needed
     size_t decryptedDataLength;
     decrypt_aes256(receivedDataBytes, receivedData.length(), decryptedData, decryptedDataLength, (const unsigned char *)SECRET_KEY);
     Serial.println("ESP32 Decrypted data:  \n");
+
+    // Print the decrypted data for debugging
+    Serial.print("ESP32 Decrypted data: ");
+    for (size_t i = 0; i < decryptedDataLength; i++)
+    {
+      Serial.printf("%02x", decryptedData[i]);
+    }
+    Serial.println();
 
     // Convert decrypted data back to String for further processing
     String decryptedDataStr = String((char *)decryptedData);
