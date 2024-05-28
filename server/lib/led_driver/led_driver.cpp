@@ -2,8 +2,8 @@
 #include <stdbool.h>
 #include "led_driver.h"
 
-static uint8_t pin_num = 0xFFU;
-static bool initialized = false;
+static uint8_t pin_num = 0xFFU;  /**< Pin number to initialize the LED driver with.*/
+static bool initialized = false; /**< Initialization flag */
 
 /**
  * @brief Initializes the LED driver.
@@ -14,10 +14,10 @@ static bool initialized = false;
  */
 void led_driver_init(uint8_t pin)
 {
-    pin_num = pin;
-    initialized = true;
-    bsp_pin_mode(pin, OUTPUT);
-    bsp_digital_write(pin, LED_DRIVER_LOW);
+    pin_num = pin;                          /**< Pin number to initialize the LED driver with.*/
+    initialized = true;                     /**< Initialization flag */
+    bsp_pin_mode(pin, OUTPUT);              /**< Set the pin mode to OUTPUT */
+    bsp_digital_write(pin, LED_DRIVER_LOW); /**< Set the initial state of the LED driver to LOW */
 }
 
 /**
@@ -28,21 +28,30 @@ void led_driver_init(uint8_t pin)
  * @param state The state to set the LED driver to.
  * @return True if the state was set successfully, false otherwise.
  */
+/**
+ * Sets the state of an LED to either high or low, verifying initialization and state validity before applying the change.
+ *
+ * @param state The desired state of the LED, should be LED_DRIVER_HIGH or LED_DRIVER_LOW.
+ * @return true if the LED state was successfully set, false otherwise.
+ */
 bool led_driver_set_state(uint8_t state)
 {
-    bool status = false;
+    bool status = false; /**< Status flag */
 
+    /* Check if the LED driver is initialized */
     if (initialized)
     {
+        /* Check if the state is valid */
         if ((state == LED_DRIVER_HIGH) || (state == LED_DRIVER_LOW))
         {
             state = (state == LED_DRIVER_HIGH) ? LED_DRIVER_HIGH : LED_DRIVER_LOW;
 
-            bsp_digital_write(pin_num, state);
+            bsp_digital_write(pin_num, state); /**< Set the state of the LED driver */
 
+            /* Check if the state was set successfully */
             if (state == bsp_digital_read(pin_num))
             {
-                status = true;
+                status = true; /**< Set the status flag to true */
             }
         }
     }

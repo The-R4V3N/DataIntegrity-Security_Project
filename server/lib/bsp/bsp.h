@@ -1,3 +1,14 @@
+/**
+ * @file bsp.h
+ * @author Oliver Joisten (contact@oliver-joisten.se)
+ * @brief  This file contains the declaration of the Board Support Package (BSP) for the project.
+ * @version 0.1
+ * @date 2024-05-25
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
+
 #ifndef BSP_H
 #define BSP_H
 

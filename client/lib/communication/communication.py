@@ -1,85 +1,119 @@
 # Autor: Oliver Joisten
-# Desccription: This file contains the communictaion module which is used int the client.py file to send and receive messages from the server.
+# Desccription: This file contains a event handler and a Serial communication class which is used to send and receive messages from the server.
 
-import serial
-from client.lib.security.security import generate_hmac, verify_hmac, encrypt_message_aes256, decrypt_message_aes256, aes_key
+from abc import ABC, abstractmethod
+import serial as uart
 
-import traceback
-
-
-BAUD_RATE = 115200
+BAUDRATE = 115200
 
 
-class SerialCommunication:
-    def __init__(self):
-        self.serial_connection = None
+class evt_handler(ABC):
+    @abstractmethod
+    def send_data(self, data: bytes) -> None:
+        """
+        Abstract method to send data. Subclasses must implement this method.
 
-    def establish_connection(self, port, BAUD_RATE=BAUD_RATE, timeout=1):
-        try:
-            self.serial_connection = serial.Serial(
-                port, baudrate=BAUD_RATE, timeout=timeout)
-            return True, f"Session Established on {port}"
-        except serial.SerialException as e:
-            return False, f"Failed to open port {port}: {e}"
+        Args:
+            data (bytes): The data to be sent.
+        """
+        raise NotImplementedError(
+            "The send_data method must be implemented by subclasses")
 
-    def is_connected(self):
-        return self.serial_connection is not None and self.serial_connection.is_open
+    @abstractmethod
+    def receive_data(self, size: int) -> bytes:
+        """
+        Abstract method to receive data. Subclasses must implement this method.
 
-    def send_data(self, data, hmac_key, aes_key):
-        if self.is_connected():  # Check if the serial connection is established
-            try:
-                # Generate HMAC for the data
-                hmac = generate_hmac(data, hmac_key)
+        Args:
+            size (int): The size of data to receive.
 
-                # Combine data with HMAC
-                full_message = f"{data},{hmac}"
-                print("Full_Message: ", full_message + "\n")
-                full_message_bytes = full_message.encode('utf-8')
-                print("FULL MESSAGE BYTES: ", full_message_bytes)
+        Returns:
+            bytes: The received data.
+        """
+        raise NotImplementedError(
+            "The receive_data method must be implemented by subclasses")
 
-                # Encrypt the message
-                encrypted_message_hex = encrypt_message_aes256(
-                    full_message_bytes, aes_key)
-                print("ENCRYPTED MESSAGE BEFORE SEND: ", encrypted_message_hex)
-                print("\n")
+    @abstractmethod
+    def close_connection(self) -> None:
+        """
+        Abstract method to close the connection. Subclasses must implement this method.
+        """
+        raise NotImplementedError(
+            "The close_connection method must be implemented by subclasses")
 
-                # Send the encrypted message over the serial connection
-                self.serial_connection.write(encrypted_message_hex.encode(
-                    'utf-8'))  # Use serial_connection's write method
-                print("Encrypted message sent ",
-                      encrypted_message_hex.encode('utf-8'))
-                print("\n")
-                return True, "Data sent"
-            except Exception as e:
-                traceback.print_exc()
-                return False, f"Failed to encrypt data: {e}"
+
+class SerialCommunication(evt_handler):
+    def __init__(self, port, baudrate=BAUDRATE):
+        """
+        Initializes the SerialCommunication object.
+
+        Args:
+            port (str): The port to connect to.
+            baudrate (int, optional): The baudrate of the connection. Defaults to BAUDRATE.
+        """
+        self.ser = None
+        self.port = port
+        self.baudrate = baudrate
+
+    def open_connection(self):
+        """
+        Opens the connection to the serial port.
+
+        Raises:
+            serial.SerialException: If the port cannot be opened.
+        """
+        if self.ser and self.ser.is_open:
+            raise ConnectionError("Connection is already open.")
+        self.ser = uart.Serial(self.port, self.baudrate, timeout=1)
+
+    def send_data(self, data: bytes) -> None:
+        """
+        Sends data to the connected port.
+
+        Args:
+            data (bytes): The data to send.
+
+        Raises:
+            serial.SerialTimeoutException: If a timeout occurs during writing.
+        """
+        if self.ser and self.ser.is_open:
+            self.ser.write(data)
+            print(f"Sent data: {len(data)} bytes to {self.ser.port}")
         else:
-            return False, "Serial connection not established"
+            raise ConnectionError("Connection is not open.")
 
-    def serial_read(self, hmac_key):
-        if self.serial_connection and self.serial_connection.in_waiting:
-            encrypted_data = self.serial_connection.readline().decode('utf-8').strip()
-            print("Encrypted Data Received:", encrypted_data)
+    def receive_data(self, size: int) -> bytes:
+        """
+        Receives data from the connected port.
 
-            # Remove non-hexadecimal characters (temporary workaround)
-            encrypted_data = ''.join(filter(str.isalnum, encrypted_data))
+        Args:
+            size (int): The size of data to receive.
 
-            # Decrypt the data
-            try:
-                decrypted_data = decrypt_message_aes256(
-                    encrypted_data, hmac_key)
-                message, received_hmac = decrypted_data.rsplit(',', 1)
+        Returns:
+            bytes: The received data.
 
-                if verify_hmac(message, received_hmac, hmac_key):
-                    return message
-                else:
-                    return "HMAC verification failed"
-            except Exception as e:
-                return f"Decryption error: {e}"
-                print("Serial Read finished")
-        return None
+        Raises:
+            serial.SerialTimeoutException: If a timeout occurs during reading.
+        """
+        if self.ser and self.ser.is_open:
+            data = self.ser.read(size)
+            print(f"Received data: {len(data)} bytes from {self.ser.port}")
+            return data
+        raise ConnectionError("Connection is not open.")
 
-    def close_connection(self):
-        if self.serial_connection and self.serial_connection.is_open:
-            self.serial_connection.close()
-            return True, "Session closed"
+    def close_connection(self) -> None:
+        """
+        Closes the connection to the serial port.
+        """
+        if self.ser and self.ser.is_open:
+            self.ser.close()
+            print(f"Closed connection to {self.ser.port}")
+
+    def is_connected(self) -> bool:
+        """
+        Checks if the connection is open.
+
+        Returns:
+            bool: True if the connection is open, False otherwise.
+        """
+        return self.ser is not None and self.ser.is_open

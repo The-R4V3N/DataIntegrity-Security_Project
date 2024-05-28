@@ -1,24 +1,23 @@
+/**
+ * @file temp_sensor.cpp
+ * @author Oliver Joisten (contact@oliver-joisten.se)
+ * @brief  This file contains the implementation of the temperature sensor module.
+ * @version 0.1
+ * @date 2024-05-25
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
+
 #include "temp_sensor.h"
 #include "bsp.h"
 
-/**
- * @brief Initializes the temperature sensor.
- *
- * This function is used to initialize the internal temperature sensor.
- */
 void temp_sensor_init()
 {
     ;
 }
 
-/**
- * @brief Reads the temperature from the internal temperature sensor.
- *
- * This function is used to read the temperature from the internal temperature sensor.
- *
- * @return The temperature read from the internal temperature sensor.
- */
 float temp_sensor_read()
 {
-    return (temperature_sens_read() - 23) / 1.8;
+    return (temp_sensor_read() - 23) / 1.8;
 }

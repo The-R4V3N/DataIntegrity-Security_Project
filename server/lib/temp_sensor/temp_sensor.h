@@ -1,3 +1,14 @@
+/**
+ * @file temp_sensor.h
+ * @author Oliver Joisten (contact@oliver-joisten.se)
+ * @brief  This file contains the function declarations for the temperature sensor module.
+ * @version 0.1
+ * @date 2024-05-25
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
+
 #ifndef TEMP_SENSOR_H
 #define TEMP_SENSOR_H
 
@@ -17,6 +28,6 @@ void temp_sensor_init();
  *
  * @return The temperature read from the internal temperature sensor.
  */
-float temperature_sens_read();
+float temp_sensor_read();
 
 #endif // TEMP_SENSOR_H

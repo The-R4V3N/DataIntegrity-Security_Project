@@ -1,3 +1,15 @@
+/**
+ * @file led_driver.h
+ * @author Oliver Joisten (contact@oliver-joisten.se)
+ * @brief Led driver header file for the project.
+ *        This file contains the function declarations for the led driver.
+ * @version 0.1
+ * @date 2024-05-25
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
+
 #ifndef LED_DRIVER_H
 #define LED_DRIVER_H
 
