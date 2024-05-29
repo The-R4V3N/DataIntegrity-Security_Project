@@ -1,9 +1,10 @@
 client/__pycache__/*
+client/src/__pycache__/*
 client/lib/__pycache__/*
 client/lib/communication/__pycache__/*
-client/lib/gui/__pycache__/*
 client/lib/security/__pycache__/*
-client/src/__pycache__/*
+client/src/session/__pycache__/*
+client/lib/gui/__pycache__/*
 .vscode/*
 server/.vscode/*
 

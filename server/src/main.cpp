@@ -281,88 +281,8 @@ static void establish_session(uint8_t *buffer)
 
 void setup()
 {
-    Serial.begin(115200);
-
-    // HMAC-SHA256
-    mbedtls_md_init(&hmacContext);
-    assert(0 == mbedtls_md_setup(&hmacContext, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1));
-
-    // AES-256
-    mbedtls_aes_init(&aesEncryptionContext);
-
-    uint8_t initial[AES_SIZE]{0};
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-    for (size_t i = 0; i < sizeof(initial); i++)
-    {
-        initial[i] = random(0x100);
-    }
-    assert(0 == mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, initial, sizeof(initial)));
-
-    // RSA-2048
-    mbedtls_pk_init(&server_ctx);
-    assert(0 == mbedtls_pk_setup(&server_ctx, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)));
-    assert(0 == mbedtls_rsa_gen_key(mbedtls_pk_rsa(server_ctx), mbedtls_ctr_drbg_random,
-                                    &ctr_drbg, RSA_SIZE * CHAR_BIT, EXPONENT));
 }
 
 void loop()
 {
-    uint8_t buffer[DER_SIZE + RSA_SIZE] = {0};
-    size_t length = client_read(buffer, sizeof(buffer));
-
-    if (length == DER_SIZE)
-    {
-        exchange_public_keys(buffer);
-    }
-    else if (length == 2 * RSA_SIZE)
-    {
-        establish_session(buffer);
-    }
-    else if (length == AES_BLOCK_SIZE)
-    {
-        if (sessionId != 0)
-        {
-            uint8_t encryptedData[AES_BLOCK_SIZE]{0};
-            if (0 == mbedtls_aes_crypt_cbc(&aesEncryptionContext, MBEDTLS_AES_DECRYPT, length, decryptionInitializationVector, buffer, encryptedData))
-            {
-                if (encryptedData[AES_BLOCK_SIZE - 1] == 9)
-                {
-                    if (encryptedData[0] == 0x54) // Get temperature
-                    {
-                        if (0 == memcmp(&sessionId, &encryptedData[1], sizeof(sessionId)))
-                        {
-                            buffer[0] = 0x10; // OKAY
-                            sprintf((char *)&buffer[1], "%2.2f", temperatureRead());
-                        }
-                    }
-                    else if (encryptedData[0] == 0x02) // Toggel led
-                    {
-                        if (0 == memcmp(&sessionId, &encryptedData[1], sizeof(sessionId)))
-                        {
-                            buffer[0] = 0x10; // OKAY
-                            sprintf((char *)&buffer[1], "%2.2f", float(encryptedData[1]));
-                        }
-                    }
-                    length = AES_BLOCK_SIZE;
-
-                    if (0 == mbedtls_aes_crypt_cbc(&aesEncryptionContext, MBEDTLS_AES_ENCRYPT, length, encryptionInitializationVector, buffer, encryptedData))
-                    {
-                        if (!client_write(encryptedData, length))
-                        {
-                            ;
-                        }
-                    }
-                    else
-                    {
-                        ;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        ;
-    }
 }

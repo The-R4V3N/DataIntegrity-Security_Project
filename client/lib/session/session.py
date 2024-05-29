@@ -1,15 +1,15 @@
 # Autor: Oliver Joisten
 # Desccription: This file contains the session class which is used to establish a connection with the server and send requests to it.
 
-from lib.security.security import pk, hmac_hash, RSA_SIZE, EXPONENT
-from lib.communication.communication import SerialCommunication
+from client.lib.security.security import pk, hmac_hash, RSA_SIZE, EXPONENT
+from client.lib.communication.communication import SerialCommunication
 
 
 class Session:
     def __init__(self):
         """Initializes the session object."""
         self.connect_state = False
-        self.comm = SerialCommunication()
+        self.comm = SerialCommunication(self)
 
     def session(self):
         """Checks the connection state with the server.
