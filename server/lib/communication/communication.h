@@ -1,13 +1,16 @@
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 /**
  * @brief Initialize the communication module
  *
  * @return true if the communication module was successfully initialized
  * @return false if the communication module could not be initialized
  */
-bool communication_init();
+bool communication_init(void);
 
 /**
  * @brief Read data from the communication module

@@ -32,5 +32,5 @@ size_t client_read(uint8_t *buffer, size_t blen)
 
 bool client_write(uint8_t *buffer, size_t dlen)
 {
-    return dlen == Serial.write(buffer, dlen);
+    return (dlen == Serial.write(buffer, dlen));
 }

@@ -10,137 +10,101 @@
  */
 
 #include "session.h"
-#include <iostream>
-#include <vector>
-#include <cstring>
+#include <Arduino.h>
+#include <mbedtls/md.h>
+#include <mbedtls/pk.h>
+#include <mbedtls/rsa.h>
+#include <mbedtls/aes.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
 
-// External HMAC key provided by the security module
-extern unsigned char hmac_key[];
-extern size_t hmac_key_len;
+constexpr int AES_SIZE{32};
+constexpr int DER_SIZE{294};
+constexpr int RSA_SIZE{256};
+constexpr int HASH_SIZE{32};
+constexpr int EXPONENT{65537};
+constexpr int AES_BLOCK_SIZE{16};
 
-Session::Session() : connect_state(false)
+static mbedtls_aes_context aesEncryptionContext;
+static mbedtls_md_context_t hmacContext;
+static mbedtls_pk_context clientPublicKeyContext;
+static mbedtls_pk_context server_ctx;
+static mbedtls_entropy_context entropy;
+static mbedtls_ctr_drbg_context ctr_drbg;
+static uint64_t sessionId{0};
+static uint8_t aes_key[AES_SIZE]{0};
+static uint8_t encryptionInitializationVector[AES_BLOCK_SIZE]{0};
+static uint8_t decryptionInitializationVector[AES_BLOCK_SIZE]{0};
+static const uint8_t hmac_hash[HASH_SIZE] = {0x29, 0x49, 0xde, 0xc2, 0x3e, 0x1e, 0x34, 0xb5, 0x2d, 0x22, 0xb5,
+                                             0xba, 0x4c, 0x34, 0x23, 0x3a, 0x9d, 0x3f, 0xe2, 0x97, 0x14, 0xbe,
+                                             0x24, 0x62, 0x81, 0x0c, 0x86, 0xb1, 0xf6, 0x92, 0x54, 0xd6};
+
+static size_t client_read(uint8_t *buffer, size_t blen)
 {
-    init_rsa();
-    init_hmac();
-    communication_init();
-}
-
-Session::~Session()
-{
-    close_session();
-    free_rsa();
-    free_hmac();
-}
-
-void Session::init_rsa()
-{
-    mbedtls_rsa_init(&rsa, MBEDTLS_RSA_PKCS_V15, 0);
-    // Initialize and generate RSA key pair here, or load existing keys
-}
-
-void Session::init_hmac()
-{
-    mbedtls_md_init(&hmac_ctx);
-    mbedtls_md_setup(&hmac_ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
-}
-
-void Session::free_rsa()
-{
-    mbedtls_rsa_free(&rsa);
-}
-
-void Session::free_hmac()
-{
-    mbedtls_md_free(&hmac_ctx);
-}
-
-bool Session::session()
-{
-    return connect_state;
-}
-
-bool Session::toggle_led()
-{
-    if (connect_state)
+    while (0 == Serial.available())
     {
-        return send_request("0x49");
+        ;
     }
-    return false;
+    size_t length = Serial.readBytes(buffer, blen);
+    if (length > HASH_SIZE)
+    {
+        length -= HASH_SIZE;
+        uint8_t hmac[HASH_SIZE]{0};
+        mbedtls_md_hmac_starts(&hmacContext, hmac_hash, HASH_SIZE);
+        mbedtls_md_hmac_update(&hmacContext, buffer, length);
+        mbedtls_md_hmac_finish(&hmacContext, hmac);
+        if (0 != memcmp(hmac, buffer + length, HASH_SIZE))
+        {
+            length = 0;
+        }
+    }
+    else
+    {
+        length = 0;
+    }
+    return length;
 }
 
-bool Session::get_temp()
+static bool client_write(uint8_t *buffer, size_t dlen)
 {
-    if (connect_state)
+    bool status{false};
+    mbedtls_md_hmac_starts(&hmacContext, hmac_hash, HASH_SIZE);
+    mbedtls_md_hmac_update(&hmacContext, buffer, dlen);
+    mbedtls_md_hmac_finish(&hmacContext, buffer + dlen);
+    dlen += HASH_SIZE;
+    if (dlen == Serial.write(buffer, dlen))
     {
-        return send_request("0x54");
+        Serial.flush();
+        status = true;
     }
-    return false;
+    return status;
 }
 
-void Session::close_session()
+bool session_init(void)
 {
-    if (connect_state)
+    mbedtls_md_init(&hmacContext);
+    assert(0 == mbedtls_md_setup(&hmacContext, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1));
+    // AES-256
+    mbedtls_aes_init(&aesEncryptionContext);
+    uint8_t initial[AES_SIZE]{0};
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    for (size_t i = 0; i < sizeof(initial); i++)
     {
-        send_request("0x10");
-        connect_state = false;
+        initial[i] = random(0x100);
     }
+    assert(0 == mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, initial, sizeof(initial)));
+    // RSA-2048
+    mbedtls_pk_init(&server_ctx);
+    assert(0 == mbedtls_pk_setup(&server_ctx, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)));
+    assert(0 == mbedtls_rsa_gen_key(mbedtls_pk_rsa(server_ctx), mbedtls_ctr_drbg_random,
+                                    &ctr_drbg, RSA_SIZE * CHAR_BIT, EXPONENT));
 }
 
-bool Session::send_request(const std::string &data)
+int session_request(void)
 {
-    unsigned char hmac_value[32];
-    mbedtls_md_context_t hmac_ctx_local;
-    mbedtls_md_init(&hmac_ctx_local);
-    mbedtls_md_setup(&hmac_ctx_local, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
-
-    mbedtls_md_hmac_starts(&hmac_ctx_local, hmac_key, hmac_key_len);
-    mbedtls_md_hmac_update(&hmac_ctx_local, (unsigned char *)data.c_str(), data.length());
-    mbedtls_md_hmac_finish(&hmac_ctx_local, hmac_value);
-    mbedtls_md_free(&hmac_ctx_local);
-
-    std::string request_data = data + std::string((char *)hmac_value, 32);
-    bool success = client_write((uint8_t *)request_data.c_str(), request_data.size());
-    if (!success)
-    {
-        last_error = "Connection Error: Could not write data.";
-        close_session();
-        return false;
-    }
-    return true;
 }
 
-std::string Session::receive_data(int size)
+bool session_response(const uint8_t *res, size_t size)
 {
-    std::vector<uint8_t> buffer(size + 32);
-    size_t read_bytes = client_read(buffer.data(), buffer.size());
-
-    if (read_bytes != buffer.size())
-    {
-        last_error = "Connection Error: Could not read data.";
-        close_session();
-        return "";
-    }
-
-    unsigned char hmac_value[32];
-    mbedtls_md_context_t hmac_ctx_local;
-    mbedtls_md_init(&hmac_ctx_local);
-    mbedtls_md_setup(&hmac_ctx_local, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
-
-    mbedtls_md_hmac_starts(&hmac_ctx_local, hmac_key, hmac_key_len);
-    mbedtls_md_hmac_update(&hmac_ctx_local, buffer.data(), size);
-    mbedtls_md_hmac_finish(&hmac_ctx_local, hmac_value);
-    mbedtls_md_free(&hmac_ctx_local);
-
-    if (memcmp(hmac_value, buffer.data() + size, 32) != 0)
-    {
-        last_error = "Hash Error";
-        close_session();
-        return "";
-    }
-    return std::string(buffer.begin(), buffer.begin() + size);
-}
-
-std::string Session::get_last_error()
-{
-    return last_error;
 }

@@ -1,107 +1,125 @@
 # Autor: Oliver Joisten
 # Desccription: This file contains the session class which is used to establish a connection with the server and send requests to it.
 
-from client.lib.security.security import pk, hmac_hash, RSA_SIZE, EXPONENT
-from client.lib.communication.communication import SerialCommunication
+import serial.tools.list_ports
+from client.lib.communication.communication import CommunicationManager
+from mbedtls import pk, hmac, hashlib, cipher
+
+BAUDRATE = 115200
+
+RSA_SIZE = 256
+EXPONENT = 65537
+SECRET_KEY = b"Fj2-;wu3Ur=ARl2!Tqi6IuKM3nG]8z1+"
+
+HMAC_KEY = hashlib.sha256()
+HMAC_KEY.update(SECRET_KEY)
+HMAC_KEY = HMAC_KEY.digest()
+hmac_hash = hmac.new(HMAC_KEY, digestmod="SHA256")
 
 
-class Session:
+class SessionManager:
     def __init__(self):
-        """Initializes the session object."""
-        self.connect_state = False
-        self.comm = SerialCommunication(self)
+        self.serial_comm = None
+        self.session_active = False
+        self.communication_manager = CommunicationManager()
+        self.session_id = None
+        self.aes = None
 
-    def session(self):
-        """Checks the connection state with the server.
-
-        Returns:
-            bool: The current connection state.
-        """
-        return self.connect_state
-
-    def toggle_led(self):
-        """Sends a request to toggle the LED on the server.
+    def get_serial_ports(self):
+        """Gets the available serial ports.
 
         Returns:
-            bool: True if the request was sent successfully, False otherwise.
+            list: A list of available serial ports.
         """
-        if self.connect_state:
-            return self.send_request(b'0x49')
-        return False
+        ports = serial.tools.list_ports.comports()
+        return [port.device for port in ports]
 
-    def get_temp(self):
-        """Sends a request to get the temperature from the server.
+    def is_connected(self):
+        """Checks if the serial communication is connected.
 
         Returns:
-            bool: True if the request was sent successfully, False otherwise.
+            bool: True if connected, False otherwise.
         """
-        if self.connect_state:
-            return self.send_request(b'0x54')
-        return False
+        return self.serial_comm and self.serial_comm.is_open
+
+    def establish_session(self, port):
+        """Establishes a session with the server."""
+        try:
+            self.serial_comm = self.communication_manager.open_serial_port(
+                port, BAUDRATE)
+            self.session_active = True
+            self._establish_session()
+        except serial.SerialException:
+            print(f"Failed to establish session with {port}!")
 
     def close_session(self):
-        """Closes the session with the server."""
-        if self.connect_state:
-            self.send_request(b'0x10')
-            self.comm.close()
-            self.connect_state = False
+        """Closes the session."""
+        if self.session_active:
+            self.communication_manager.write_data(b"close")
+            self.communication_manager.close_serial_port()
+            self.session_active = False
+            print("Session closed")
 
-    def send_request(self, data: bytes) -> bool:
-        """Sends a request to the server.
-
-        Args:
-            data (bytes): The data to send.
-
-        Returns:
-            bool: True if the request was sent successfully, False otherwise.
-        """
-        hmac_hash.update(data)
-        data += hmac_hash.digest()
-        written = self.comm.write(data)
-        if len(data) != written:
-            print(
-                f"Connection Error: Only {written} bytes written out of {len(data)}")
-            self.close_session()
-            return False
-        return True
-
-    def receive_data(self, size: int) -> bytes:
-        """Receives data from the server.
+    def send_command(self, command: int):
+        """Sends a command to the server.
 
         Args:
-            size (int): The size of data to receive.
-
-        Returns:
-            bytes: The received data. Returns an empty byte string if there is a hash error.
+            command (int): The command to send.
         """
-        buffer = self.comm.read(size + hmac_hash.digest_size)
-        hmac_hash.update(buffer[0:size])
-        buff = buffer[size:size + hmac_hash.digest_size]
-        dig = hmac_hash.digest()
-        if buff != dig:
-            print("Hash Error")
-            self.close_session()
-            return b''
-        return buffer[0:size]
+        self._send_command(command)
 
+    def _establish_session(self):
+        """Handles the establishment of a secure session."""
+        global rsa, hmac_hash
 
-# Initialize session
-session = Session()
+        rsa = pk.RSA()
+        rsa.generate(RSA_SIZE * 8, EXPONENT)
+        self.communication_manager.write_data(rsa.export_public_key())
 
-# Generate RSA key pair for client
-client_rsa = pk.RSA()
-client_rsa.generate(RSA_SIZE * EXPONENT)
+        buffer = self.communication_manager.read_data(2 * RSA_SIZE)
+        public_key_server = rsa.decrypt(buffer[0:RSA_SIZE])
+        public_key_server += rsa.decrypt(buffer[RSA_SIZE:2 * RSA_SIZE])
+        self.server_rsa = pk.RSA().from_DER(public_key_server)
 
-# Send the public key to the server
-session.send_request(client_rsa.export_public_key())  # len249
+        rsa = pk.RSA()
+        rsa.generate(RSA_SIZE * 8, EXPONENT)
+        buffer = rsa.export_public_key() + rsa.sign(HMAC_KEY, "SHA256")
+        buffer = self.server_rsa.encrypt(buffer[0:184]) + self.server_rsa.encrypt(
+            buffer[184:368]) + self.server_rsa.encrypt(buffer[368:550])
+        self.communication_manager.write_data(buffer)
 
-# Receive the server's public key
-buffer = session.receive_data(2 * RSA_SIZE)  # STOP
+        buffer = self.communication_manager.read_data(RSA_SIZE)
+        if b"OKAY" == rsa.decrypt(buffer):
+            buffer = rsa.sign(HMAC_KEY, "SHA256")
+            buffer = self.server_rsa.encrypt(
+                buffer[0:RSA_SIZE // 2]) + self.server_rsa.encrypt(buffer[RSA_SIZE // 2:RSA_SIZE])
+            self.communication_manager.write_data(buffer)
 
-if buffer:
-    SERVER_PUBLIC_KEY = client_rsa.decrypt(buffer[0:RSA_SIZE])
-    SERVER_PUBLIC_KEY += client_rsa.decrypt(buffer[RSA_SIZE:2 * RSA_SIZE])
-    server_rsa = pk.RSA().from_DER(SERVER_PUBLIC_KEY)
+            buffer = self.communication_manager.read_data(RSA_SIZE)
+            buffer = rsa.decrypt(buffer)
+            self.session_id = buffer[0:8]
 
-# Clean up client RSA key
-del client_rsa
+            self.aes = cipher.AES.new(
+                buffer[24:56], cipher.MODE_CBC, buffer[8:24])
+            print("Session Established and Keys Successfully Exchanged!")
+
+    def _send_command(self, command: int):
+        """Handles sending a command to the server."""
+        try:
+            request = bytes([command])
+            buffer = request + self.session_id
+            plen = cipher.AES.block_size - \
+                (len(buffer) % cipher.AES.block_size)
+            buffer = self.aes.encrypt(buffer + bytes([len(buffer)] * plen))
+            self.communication_manager.write_data(buffer)
+
+            buffer = self.communication_manager.read_data(
+                cipher.AES.block_size)
+            buffer = self.aes.decrypt(buffer)
+            if buffer[0] == 0x10:
+                print("Response: " +
+                      buffer[1:6].decode("UTF-8", errors="replace"))
+            else:
+                print("Command not found!")
+        except Exception as e:
+            print(f"Error: {e}")

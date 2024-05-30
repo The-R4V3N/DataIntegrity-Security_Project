@@ -1,37 +1,21 @@
 #ifndef SESSION_H
 #define SESSION_H
 
-#include <string>
-#include "communication.h"
-#include "mbedtls/rsa.h"
-#include "mbedtls/md.h"
+#include <stddef.h>
+#include <stdint.h>
 
-class Session
+enum
 {
-public:
-    Session();
-    ~Session();
-
-    bool session();
-    bool toggle_led();
-    bool get_temp();
-    void close_session();
-    std::string get_last_error();
-
-private:
-    bool connect_state;
-    std::string last_error;
-
-    mbedtls_rsa_context rsa;
-    mbedtls_md_context_t hmac_ctx;
-
-    bool send_request(const std::string &data);
-    std::string receive_data(int size);
-
-    void init_rsa();
-    void init_hmac();
-    void free_rsa();
-    void free_hmac();
+    SESSION_OKAY,
+    SESSION_ERROR,
+    SESSION_TOGGLE_LED,
+    SESSION_TEMPERATURE
 };
+
+bool session_init(void);
+
+int session_request(void);
+
+bool session_response(const uint8_t *res, size_t size);
 
 #endif // SESSION_H
