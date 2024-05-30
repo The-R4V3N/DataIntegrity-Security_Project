@@ -18,6 +18,13 @@
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
 
+enum
+{
+    TOGGLE_LED,
+    CLOSE_SESSION,
+    GET_TEMPERATURE
+};
+
 constexpr int AES_SIZE{32};
 constexpr int DER_SIZE{294};
 constexpr int RSA_SIZE{256};
@@ -80,31 +87,284 @@ static bool client_write(uint8_t *buffer, size_t dlen)
     return status;
 }
 
+static void exchange_public_keys(uint8_t *buffer)
+{
+    sessionId = 0;
+    size_t olen, length;
+    mbedtls_pk_init(&clientPublicKeyContext);
+    uint8_t encryptedData[3 * RSA_SIZE + HASH_SIZE] = {0};
+    if (0 != mbedtls_pk_parse_public_key(&clientPublicKeyContext, buffer, DER_SIZE))
+    {
+        ;
+    }
+    if (MBEDTLS_PK_RSA != mbedtls_pk_get_type(&clientPublicKeyContext))
+    {
+        ;
+    }
+    if (DER_SIZE != mbedtls_pk_write_pubkey_der(&server_ctx, buffer, DER_SIZE))
+    {
+        ;
+    }
+    if (0 != mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, DER_SIZE / 2, encryptedData,
+                                &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    if (0 != mbedtls_pk_encrypt(&clientPublicKeyContext, buffer + DER_SIZE / 2, DER_SIZE / 2,
+                                encryptedData + RSA_SIZE, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    length = 2 * RSA_SIZE;
+    if (!client_write(encryptedData, length))
+    {
+        ;
+    }
+    length = client_read(encryptedData, sizeof(encryptedData));
+    if (!length == 3 * RSA_SIZE)
+    {
+        ;
+    }
+    if (0 != mbedtls_pk_decrypt(&server_ctx, encryptedData, RSA_SIZE, buffer, &olen, RSA_SIZE,
+                                mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    length = olen;
+    if (0 != mbedtls_pk_decrypt(&server_ctx, encryptedData + RSA_SIZE, RSA_SIZE, buffer + length,
+                                &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    length += olen;
+    if (0 != mbedtls_pk_decrypt(&server_ctx, encryptedData + 2 * RSA_SIZE, RSA_SIZE, buffer + length,
+                                &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    length += olen;
+    if (length != (DER_SIZE + RSA_SIZE))
+    {
+        ;
+    }
+    mbedtls_pk_init(&clientPublicKeyContext);
+    if (0 != mbedtls_pk_parse_public_key(&clientPublicKeyContext, buffer, DER_SIZE))
+    {
+        ;
+    }
+    if (MBEDTLS_PK_RSA != mbedtls_pk_get_type(&clientPublicKeyContext))
+    {
+        ;
+    }
+    if (0 != mbedtls_pk_verify(&clientPublicKeyContext, MBEDTLS_MD_SHA256, hmac_hash, HASH_SIZE, buffer + DER_SIZE, RSA_SIZE))
+    {
+        /* Do nothing */
+    }
+    strcpy((char *)buffer, "OKAY");
+    if (0 != mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, strlen((const char *)buffer),
+                                encryptedData, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    length = RSA_SIZE;
+    if (!client_write(encryptedData, length))
+    {
+        ;
+    }
+}
+static void establish_session(uint8_t *buffer)
+{
+    sessionId = 0;
+    size_t olen, length;
+    uint8_t encryptedData[RSA_SIZE]{0};
+    if (0 != mbedtls_pk_decrypt(&server_ctx, buffer, RSA_SIZE, encryptedData, &olen,
+                                RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    length = olen;
+    if (0 != mbedtls_pk_decrypt(&server_ctx, buffer + RSA_SIZE, RSA_SIZE, encryptedData + length,
+                                &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    length += olen;
+    if (length != RSA_SIZE)
+    {
+        ;
+    }
+    if (0 != mbedtls_pk_verify(&clientPublicKeyContext, MBEDTLS_MD_SHA256, hmac_hash, HASH_SIZE, encryptedData, RSA_SIZE))
+    {
+        ;
+    }
+    uint8_t *ptr{(uint8_t *)&sessionId};
+    if (ptr != nullptr)
+    {
+        for (size_t i = 0; i < sizeof(sessionId); i++)
+        {
+            ptr[i] = random(1, 0x100);
+        }
+        for (size_t i = 0; i < sizeof(encryptionInitializationVector); i++)
+        {
+            encryptionInitializationVector[i] = random(0x100);
+        }
+    }
+    else
+    {
+        ;
+    }
+    memcpy(decryptionInitializationVector, encryptionInitializationVector, sizeof(decryptionInitializationVector));
+    for (size_t i = 0; i < sizeof(aes_key); i++)
+    {
+        aes_key[i] = random(0x100);
+    }
+    if (0 != mbedtls_aes_setkey_enc(&aesEncryptionContext, aes_key, sizeof(aes_key) * CHAR_BIT))
+    {
+        ;
+    }
+    memcpy(buffer, &sessionId, sizeof(sessionId));
+    length = sizeof(sessionId);
+    memcpy(buffer + length, encryptionInitializationVector, sizeof(encryptionInitializationVector));
+    length += sizeof(encryptionInitializationVector);
+    memcpy(buffer + length, aes_key, sizeof(aes_key));
+    length += sizeof(aes_key);
+    if (0 != mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, length, encryptedData, &olen,
+                                RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
+    {
+        ;
+    }
+    length = RSA_SIZE;
+    if (client_write(encryptedData, length) == 0)
+    {
+        ;
+    }
+}
+
 bool session_init(void)
 {
+    bool status = true;
+    uint8_t initial[AES_SIZE]{0};
+
     mbedtls_md_init(&hmacContext);
-    assert(0 == mbedtls_md_setup(&hmacContext, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1));
+    if (0 != mbedtls_md_setup(&hmacContext, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1))
+    {
+        status = false;
+        goto end_init;
+    }
+
     // AES-256
     mbedtls_aes_init(&aesEncryptionContext);
-    uint8_t initial[AES_SIZE]{0};
     mbedtls_entropy_init(&entropy);
     mbedtls_ctr_drbg_init(&ctr_drbg);
     for (size_t i = 0; i < sizeof(initial); i++)
     {
         initial[i] = random(0x100);
     }
-    assert(0 == mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, initial, sizeof(initial)));
+    if (0 != mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, initial, sizeof(initial)))
+    {
+        status = false;
+        goto end_init;
+    }
+
     // RSA-2048
     mbedtls_pk_init(&server_ctx);
-    assert(0 == mbedtls_pk_setup(&server_ctx, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)));
-    assert(0 == mbedtls_rsa_gen_key(mbedtls_pk_rsa(server_ctx), mbedtls_ctr_drbg_random,
-                                    &ctr_drbg, RSA_SIZE * CHAR_BIT, EXPONENT));
+    if (0 != mbedtls_pk_setup(&server_ctx, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)))
+    {
+        status = false;
+        goto end_init;
+    }
+    if (0 != mbedtls_rsa_gen_key(mbedtls_pk_rsa(server_ctx), mbedtls_ctr_drbg_random,
+                                 &ctr_drbg, RSA_SIZE * CHAR_BIT, EXPONENT))
+    {
+        status = false;
+        goto end_init;
+    }
+
+end_init:
+    return status;
 }
 
 int session_request(void)
 {
+    int request = SESSION_REQ_OKAY;
+    uint8_t buffer[DER_SIZE + RSA_SIZE] = {0};
+    size_t length = client_read(buffer, sizeof(buffer));
+
+    if (length == DER_SIZE)
+    {
+        exchange_public_keys(buffer);
+    }
+    else if (length == 2 * RSA_SIZE)
+    {
+        establish_session(buffer);
+    }
+    else if (length == AES_BLOCK_SIZE)
+    {
+        if (sessionId != 0)
+        {
+            uint8_t encryptedData[AES_BLOCK_SIZE]{0};
+
+            if (0 == mbedtls_aes_crypt_cbc(&aesEncryptionContext, MBEDTLS_AES_DECRYPT, length, decryptionInitializationVector, buffer, encryptedData))
+            {
+                if (encryptedData[AES_BLOCK_SIZE - 1] == 9)
+                {
+                    if (0 == memcmp(&sessionId, &encryptedData[1], sizeof(sessionId)))
+                    {
+                        switch (encryptedData[0])
+                        {
+                        case GET_TEMPERATURE:
+                            request = SESSION_REQ_TEMPERATURE;
+                            break;
+                        case TOGGLE_LED:
+                            request = SESSION_REQ_TOGGLE_LED;
+                            break;
+                        case CLOSE_SESSION:
+                            sessionId = 0;
+                            request = SESSION_REQ_OKAY;
+                            encryptedData[0] = SESSION_RES_OKAY;
+                            session_response(encryptedData, 1);
+
+                            break;
+                        default:
+                            request = SESSION_REQ_ERROR;
+                            encryptedData[0] = SESSION_RES_BAD_REQUEST;
+                            session_response(encryptedData, 1);
+
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        request = SESSION_REQ_ERROR;
+                        encryptedData[0] = SESSION_RES_INVALID;
+                        session_response(encryptedData, 1);
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        // Hash error;
+        request = SESSION_REQ_ERROR;
+    }
+
+    return request;
 }
 
 bool session_response(const uint8_t *res, size_t size)
 {
+    bool status = false;
+    uint8_t buffer[AES_BLOCK_SIZE + HASH_SIZE] = {0};
+
+    if (0 == mbedtls_aes_crypt_cbc(&aesEncryptionContext, MBEDTLS_AES_ENCRYPT, size,
+                                   encryptionInitializationVector, res, buffer))
+    {
+        if (client_write(buffer, AES_BLOCK_SIZE))
+        {
+            status = true;
+        }
+    }
+
+    return true;
 }
