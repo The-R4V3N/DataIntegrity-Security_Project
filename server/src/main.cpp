@@ -21,7 +21,8 @@ void loop()
 {
     int request = session_request(); /**< Request a session */
 
-    digitalWrite(GPIO_NUM_32, LOW); /**< Initial Relay state */
+    // TODO Remove this line below it is just for Debugging if the seesion_request() is not working
+    digitalWrite(GPIO_NUM_32, LOW);
 
     /* Handle the request */
     if (request == SESSION_TOGGLE_LED)

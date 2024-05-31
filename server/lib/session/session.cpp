@@ -19,8 +19,12 @@
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
 
-#define SESSION_CLOSE 0xFF
+#define SESSION_CLOSE 0xFF /**< Session Close */
 
+/**
+ * @brief Status Codes
+ *
+ */
 enum
 {
     STATUS_OKAY,
@@ -378,32 +382,34 @@ int session_request(void)
 
 bool session_response(const uint8_t *res, size_t size)
 {
-    bool status = false;
-    uint8_t response[AES_BLOCK_SIZE] = {0};
-    uint8_t buffer[AES_BLOCK_SIZE + HASH_SIZE] = {0};
+    bool status = false;                              /**< Status Flag */
+    uint8_t response[AES_BLOCK_SIZE] = {0};           /**< Response */
+    uint8_t buffer[AES_BLOCK_SIZE + HASH_SIZE] = {0}; /**< Buffer */
 
     switch (res[0])
     {
-    case SESSION_OKAY:
-        response[0] = STATUS_OKAY;
+    case SESSION_OKAY:             /**< Session Okay */
+        response[0] = STATUS_OKAY; /**< Set the response */
         break;
-    case SESSION_ERROR:
-        response[0] = STATUS_ERROR;
+    case SESSION_ERROR:             /**< Session Error */
+        response[0] = STATUS_ERROR; /**< Set the response */
         break;
     default:
-        response[0] = res[0];
+        response[0] = res[0]; /**< Set the response */
         break;
     }
 
+    /* Copy the data */
     if (size > 1)
     {
         memcpy(response + 1, res + 1, size - 1);
     }
 
+    /* Encrypt the data */
     if (0 == mbedtls_aes_crypt_cbc(&aesEncryptionContext, MBEDTLS_AES_ENCRYPT, sizeof(response), encryptionInitializationVector, response, buffer))
     {
         status = client_write(buffer, AES_BLOCK_SIZE);
     }
 
-    return status;
+    return status; /**< Return the status */
 }
