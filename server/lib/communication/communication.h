@@ -19,7 +19,7 @@ bool communication_init(void);
  * @param blen the length of the buffer
  * @return size_t the length of the data
  */
-size_t client_read(uint8_t *buffer, size_t blen);
+size_t communication_read(uint8_t *buffer, size_t blen);
 
 /**
  * @brief Write data to the communication module
@@ -29,6 +29,6 @@ size_t client_read(uint8_t *buffer, size_t blen);
  * @return true if the data was successfully written
  * @return false if the data could not be written
  */
-bool client_write(uint8_t *buffer, size_t dlen);
+bool communication_write(uint8_t *buffer, size_t dlen);
 
 #endif // COMMUNICATION_H

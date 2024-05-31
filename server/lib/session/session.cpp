@@ -10,24 +10,25 @@
  */
 
 #include "session.h"
-#include "communication.h"
 #include <Arduino.h>
 #include <mbedtls/md.h>
 #include <mbedtls/pk.h>
 #include <mbedtls/rsa.h>
 #include <mbedtls/aes.h>
+#include "communication.h"
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
 
-/**
- * @brief Session request types
- *
- */
+#define SESSION_CLOSE 0xFF
+
 enum
 {
-    TOGGLE_LED,
-    CLOSE_SESSION,
-    GET_TEMPERATURE
+    STATUS_OKAY,
+    STATUS_ERROR,
+    STATUS_EXPIRED,
+    STATUS_HASH_ERROR,
+    STATUS_BAD_REQUEST,
+    STATUS_INVALID_SESSION,
 };
 
 constexpr int AES_SIZE{32};       /**< AES Size */
@@ -55,14 +56,9 @@ static const uint8_t hmac_hash[HASH_SIZE] = {0x29, 0x49, 0xde, 0xc2, 0x3e, 0x1e,
 
 size_t client_read(uint8_t *buffer, size_t blen)
 {
-    /* Wait for data */
-    while (0 == Serial.available())
-    {
-        ;
-    }
-
     /* Read the data */
-    size_t length = Serial.readBytes(buffer, blen);
+    size_t length = communication_read(buffer, blen);
+
     if (length > HASH_SIZE)
     {
         /* Verify the HMAC */
@@ -86,21 +82,13 @@ size_t client_read(uint8_t *buffer, size_t blen)
 }
 
 bool client_write(uint8_t *buffer, size_t dlen)
-{
-
-    bool status{false};                                         /**< Status */
+{                                                               /**< Status */
     mbedtls_md_hmac_starts(&hmacContext, hmac_hash, HASH_SIZE); /**< Start the HMAC */
     mbedtls_md_hmac_update(&hmacContext, buffer, dlen);         /**< Update the HMAC */
     mbedtls_md_hmac_finish(&hmacContext, buffer + dlen);        /**< Finish the HMAC */
     dlen += HASH_SIZE;
 
-    /* Write the data */
-    if (dlen == Serial.write(buffer, dlen))
-    {
-        Serial.flush(); /**< Flush the buffer */
-        status = true;  /**< Set the status */
-    }
-    return status; /**< Return the status */
+    return (dlen == communication_write(buffer, dlen)); /**< Return the status */
 }
 
 static void exchange_public_keys(uint8_t *buffer)
@@ -111,115 +99,74 @@ static void exchange_public_keys(uint8_t *buffer)
     uint8_t encryptedData[3 * RSA_SIZE + HASH_SIZE] = {0}; /**< Encrypted data */
 
     /* Parse the public key */
-    if (0 != mbedtls_pk_parse_public_key(&clientPublicKeyContext, buffer, DER_SIZE))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_parse_public_key(&clientPublicKeyContext, buffer, DER_SIZE));
 
     /* Check the public key type */
-    if (MBEDTLS_PK_RSA != mbedtls_pk_get_type(&clientPublicKeyContext))
-    {
-        /* Do Nothing */
-    }
+    assert(MBEDTLS_PK_RSA == mbedtls_pk_get_type(&clientPublicKeyContext));
 
     /* Write the public key */
-    if (DER_SIZE != mbedtls_pk_write_pubkey_der(&server_ctx, buffer, DER_SIZE))
-    {
-        /* Do Nothing */
-    }
+    assert(DER_SIZE == mbedtls_pk_write_pubkey_der(&server_ctx, buffer, DER_SIZE));
 
     /* Encrypt the data */
-    if (0 != mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, DER_SIZE / 2, encryptedData,
-                                &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, DER_SIZE / 2,
+                                   encryptedData, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
 
     /* Encrypt the data */
-    if (0 != mbedtls_pk_encrypt(&clientPublicKeyContext, buffer + DER_SIZE / 2, DER_SIZE / 2,
-                                encryptedData + RSA_SIZE, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_encrypt(&clientPublicKeyContext, buffer + DER_SIZE / 2, DER_SIZE / 2,
+                                   encryptedData + RSA_SIZE, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
+
     length = 2 * RSA_SIZE; /**< Set the length */
-
     /* Write the encrypted data */
-    if (!client_write(encryptedData, length))
-    {
-        /* Do Nothing */
-    }
+    assert(client_write(encryptedData, length));
+
     length = client_read(encryptedData, sizeof(encryptedData)); /**< Read the data */
 
     /* Check length */
-    if (!length == 3 * RSA_SIZE)
-    {
-        /* Do Nothing */
-    }
+    assert(length == 3 * RSA_SIZE);
 
     /* Decrypt the data */
-    if (0 != mbedtls_pk_decrypt(&server_ctx, encryptedData, RSA_SIZE, buffer, &olen, RSA_SIZE,
-                                mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_decrypt(&server_ctx, encryptedData, RSA_SIZE, buffer, &olen, RSA_SIZE,
+                                   mbedtls_ctr_drbg_random, &ctr_drbg));
+
     length = olen; /**< Set the length */
 
     /* Decrypt the data */
-    if (0 != mbedtls_pk_decrypt(&server_ctx, encryptedData + RSA_SIZE, RSA_SIZE, buffer + length,
-                                &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_decrypt(&server_ctx, encryptedData + RSA_SIZE, RSA_SIZE, buffer + length,
+                                   &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
+
     length += olen; /**< Set the length */
 
     /* Decrypt data*/
-    if (0 != mbedtls_pk_decrypt(&server_ctx, encryptedData + 2 * RSA_SIZE, RSA_SIZE, buffer + length,
-                                &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_decrypt(&server_ctx, encryptedData + 2 * RSA_SIZE, RSA_SIZE, buffer + length,
+                                   &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
+
     length += olen; /**< Set the length */
 
     /* Check the length */
-    if (length != (DER_SIZE + RSA_SIZE))
-    {
-        /* Do Nothing */
-    }
+    assert(length == (DER_SIZE + RSA_SIZE));
 
     /* Verify the data */
     mbedtls_pk_init(&clientPublicKeyContext);
-    if (0 != mbedtls_pk_parse_public_key(&clientPublicKeyContext, buffer, DER_SIZE))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_parse_public_key(&clientPublicKeyContext, buffer, DER_SIZE));
 
     /* Check the public key type */
-    if (MBEDTLS_PK_RSA != mbedtls_pk_get_type(&clientPublicKeyContext))
-    {
-        /* Do Nothing */
-    }
+    assert(MBEDTLS_PK_RSA == mbedtls_pk_get_type(&clientPublicKeyContext));
 
     /* Verify the data */
-    if (0 != mbedtls_pk_verify(&clientPublicKeyContext, MBEDTLS_MD_SHA256, hmac_hash, HASH_SIZE, buffer + DER_SIZE, RSA_SIZE))
-    {
-        /* Do nothing */
-    }
+    assert(0 == mbedtls_pk_verify(&clientPublicKeyContext, MBEDTLS_MD_SHA256, hmac_hash, HASH_SIZE, buffer + DER_SIZE, RSA_SIZE));
+
     strcpy((char *)buffer, "OKAY"); /**< Copy the buffer */
 
     /* Encrypt the data */
-    if (0 != mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, strlen((const char *)buffer),
-                                encryptedData, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, strlen((const char *)buffer),
+                                   encryptedData, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
+
     length = RSA_SIZE; /**< Set the length */
 
     /* Write the data */
-    if (!client_write(encryptedData, length))
-    {
-        /* Do Nothing */
-    }
+    assert(client_write(encryptedData, length));
 }
+
 static void establish_session(uint8_t *buffer)
 {
     sessionId = 0;                      /**< Initial session ID */
@@ -227,32 +174,21 @@ static void establish_session(uint8_t *buffer)
     uint8_t encryptedData[RSA_SIZE]{0}; /**< Encrypted data */
 
     /* Decrypt the data */
-    if (0 != mbedtls_pk_decrypt(&server_ctx, buffer, RSA_SIZE, encryptedData, &olen,
-                                RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_decrypt(&server_ctx, buffer, RSA_SIZE, encryptedData,
+                                   &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
     length = olen; /**< Set the length */
 
     /* Decrypt the data */
-    if (0 != mbedtls_pk_decrypt(&server_ctx, buffer + RSA_SIZE, RSA_SIZE, encryptedData + length,
-                                &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_decrypt(&server_ctx, buffer + RSA_SIZE, RSA_SIZE,
+                                   encryptedData + length, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
+
     length += olen; /**< Set the length */
 
     /* Check the lenght of the Data*/
-    if (length != RSA_SIZE)
-    {
-        /* Do Nothing */
-    }
+    assert(length == RSA_SIZE);
 
     /* Verify the data */
-    if (0 != mbedtls_pk_verify(&clientPublicKeyContext, MBEDTLS_MD_SHA256, hmac_hash, HASH_SIZE, encryptedData, RSA_SIZE))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_verify(&clientPublicKeyContext, MBEDTLS_MD_SHA256, hmac_hash, HASH_SIZE, encryptedData, RSA_SIZE));
 
     uint8_t *ptr{(uint8_t *)&sessionId}; /**< Pointer to the session */
 
@@ -285,10 +221,7 @@ static void establish_session(uint8_t *buffer)
     }
 
     /* Set the key */
-    if (0 != mbedtls_aes_setkey_enc(&aesEncryptionContext, aes_key, sizeof(aes_key) * CHAR_BIT))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_aes_setkey_enc(&aesEncryptionContext, aes_key, sizeof(aes_key) * CHAR_BIT));
 
     memcpy(buffer, &sessionId, sizeof(sessionId));                                                   /**< Copy the session ID */
     length = sizeof(sessionId);                                                                      /**< Set the length */
@@ -297,77 +230,62 @@ static void establish_session(uint8_t *buffer)
     memcpy(buffer + length, aes_key, sizeof(aes_key));                                               /**< Copy the AES Key */
     length += sizeof(aes_key);                                                                       /**< Set the length */
     /* Encrypt the data */
-    if (0 != mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, length, encryptedData, &olen,
-                                RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg))
-    {
-        /* Do Nothing */
-    }
+    assert(0 == mbedtls_pk_encrypt(&clientPublicKeyContext, buffer, length,
+                                   encryptedData, &olen, RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
+
     length = RSA_SIZE; /**< Set the length */
 
     /* Write the data */
-    if (client_write(encryptedData, length) == 0)
-    {
-        /* Do Nothing */
-    }
+    assert(client_write(encryptedData, length));
 }
 
 bool session_init(void)
 {
-    bool status = true;           /**< Status Flag */
-    uint8_t initial[AES_SIZE]{0}; /**< Initial Variable  */
+    bool status = true; /**< Status Flag */
 
-    mbedtls_md_init(&hmacContext); /**< Initialize the HMAC Context */
-
-    /* HMAC */
-    if (0 != mbedtls_md_setup(&hmacContext, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1))
+    if (communication_init())
     {
-        status = false; /**< Set the status */
-        goto end_init;  /**< End the initialization */
+        uint8_t initial[AES_SIZE]{0}; /**< Initial Variable  */
+
+        mbedtls_md_init(&hmacContext); /**< Initialize the HMAC Context */
+
+        /* HMAC */
+        if (0 == mbedtls_md_setup(&hmacContext, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1))
+        {
+            /* AES-256 */
+            mbedtls_aes_init(&aesEncryptionContext); /**< Initialize the AES Context */
+            mbedtls_entropy_init(&entropy);          /**< Initialize the Entropy */
+            mbedtls_ctr_drbg_init(&ctr_drbg);        /**< Initialize the CTR DRBG */
+
+            /* Set inital to a ramdom value  */
+            for (size_t i = 0; i < sizeof(initial); i++)
+            {
+                initial[i] = random(0x100);
+            }
+
+            /* Seed the CTR DRBG */
+            if (0 == mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, initial, sizeof(initial)))
+            {
+                /* RSA-2048 */
+                mbedtls_pk_init(&server_ctx); /**< Initialize the Server Context */
+
+                /* Setup the RSA */
+                if (0 == mbedtls_pk_setup(&server_ctx, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)))
+                {
+                    /* Generate the RSA Key */
+                    status = (0 == mbedtls_rsa_gen_key(mbedtls_pk_rsa(server_ctx), mbedtls_ctr_drbg_random, &ctr_drbg, RSA_SIZE * CHAR_BIT, EXPONENT));
+                }
+            }
+        }
     }
 
-    /* AES-256 */
-    mbedtls_aes_init(&aesEncryptionContext); /**< Initialize the AES Context */
-    mbedtls_entropy_init(&entropy);          /**< Initialize the Entropy */
-    mbedtls_ctr_drbg_init(&ctr_drbg);        /**< Initialize the CTR DRBG */
-
-    /* Set inital to a ramdom value  */
-    for (size_t i = 0; i < sizeof(initial); i++)
-    {
-        initial[i] = random(0x100);
-    }
-
-    /* Seed the CTR DRBG */
-    if (0 != mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, initial, sizeof(initial)))
-    {
-        status = false; /**< Set the status */
-        goto end_init;  /**< End the initialization */
-    }
-
-    /* RSA-2048 */
-    mbedtls_pk_init(&server_ctx); /**< Initialize the Server Context */
-
-    /* Setup the RSA */
-    if (0 != mbedtls_pk_setup(&server_ctx, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)))
-    {
-        status = false; /**< Set the status */
-        goto end_init;  /**< End the initialization */
-    }
-
-    /* Generate the RSA Key */
-    if (0 != mbedtls_rsa_gen_key(mbedtls_pk_rsa(server_ctx), mbedtls_ctr_drbg_random,
-                                 &ctr_drbg, RSA_SIZE * CHAR_BIT, EXPONENT))
-    {
-        status = false; /**< Set the status */
-        goto end_init;  /**< End the initialization */
-    }
-
-end_init:
     return status; /**< Return the status */
 }
 
 int session_request(void)
 {
-    int request = SESSION_REQ_OKAY;                      /**< Initial Request value */
+    int request = SESSION_OKAY; /**< Initial Request value */
+    uint8_t response = STATUS_OKAY;
     uint8_t buffer[DER_SIZE + RSA_SIZE] = {0};           /**< Initialize Buffer */
     size_t length = client_read(buffer, sizeof(buffer)); /**< Read the data */
 
@@ -401,40 +319,58 @@ int session_request(void)
                         /* Switch case that handles the request */
                         switch (encryptedData[0])
                         {
-                        case GET_TEMPERATURE:
-                            request = SESSION_REQ_TEMPERATURE; /**< Set the request for Temperature */
+                        case SESSION_CLOSE:
+                            sessionId = 0; /**< Set the session ID */
                             break;
-                        case TOGGLE_LED:
-                            request = SESSION_REQ_TOGGLE_LED; /**< Set the request for LED Toggle */
-                            break;
-                        case CLOSE_SESSION:
-                            sessionId = 0;                       /**< Set the session ID */
-                            request = SESSION_REQ_OKAY;          /**< Set the request */
-                            encryptedData[0] = SESSION_RES_OKAY; /**< Set the response */
-                            session_response(encryptedData, 1);  /**< Respond to the request */
 
+                        case SESSION_TEMPERATURE:
+                        case SESSION_TOGGLE_LED:
+                            request = encryptedData[0]; /**< Set the request for LED Toggle */
                             break;
+
                         default:
-                            request = SESSION_REQ_ERROR;                /**< Set the request */
-                            encryptedData[0] = SESSION_RES_BAD_REQUEST; /**< Set the response */
-                            session_response(encryptedData, 1);         /**< Respond to the request */
-
+                            request = SESSION_ERROR;       /**< Set the request */
+                            response = STATUS_BAD_REQUEST; /**< Set the response */
                             break;
                         }
                     }
                     else
                     {
-                        request = SESSION_REQ_ERROR;            /**< Set the request for Invalid Session  */
-                        encryptedData[0] = SESSION_RES_INVALID; /**< Set the response */
-                        session_response(encryptedData, 1);     /**< Respond to the request */
+                        request = SESSION_ERROR;           /**< Set the request for Invalid Session  */
+                        response = STATUS_INVALID_SESSION; /**< Set the response */
                     }
                 }
+                else
+                {
+                    request = SESSION_ERROR; /**< Set the request for Invalid Session  */
+                    response = STATUS_ERROR; /**< Set the response */
+                }
             }
+            else
+            {
+                request = SESSION_ERROR; /**< Set the request for Invalid Session  */
+                response = STATUS_ERROR; /**< Set the response */
+            }
+        }
+        else
+        {
+            request = SESSION_ERROR;           /**< Set the request for Invalid Session  */
+            response = STATUS_INVALID_SESSION; /**< Set the response */
         }
     }
     else
     {
-        request = SESSION_RES_HASH_ERROR; /**< Set the request for Hash Error */
+        // sessionId = 0;
+        request = SESSION_ERROR;      /**< Set the request for Invalid Session  */
+        response = STATUS_HASH_ERROR; /**< Set the response */
+    }
+
+    if ((request == SESSION_ERROR) || (request == SESSION_CLOSE))
+    {
+        if (!session_response(&response, sizeof(response)))
+        {
+            request = SESSION_ERROR;
+        }
     }
 
     return request; /**< Return the request */
@@ -442,19 +378,32 @@ int session_request(void)
 
 bool session_response(const uint8_t *res, size_t size)
 {
-    bool status = false;                              /**< Status */
-    uint8_t buffer[AES_BLOCK_SIZE + HASH_SIZE] = {0}; /**< Buffer */
+    bool status = false;
+    uint8_t response[AES_BLOCK_SIZE] = {0};
+    uint8_t buffer[AES_BLOCK_SIZE + HASH_SIZE] = {0};
 
-    /* Encrypt the data */
-    if (0 == mbedtls_aes_crypt_cbc(&aesEncryptionContext, MBEDTLS_AES_ENCRYPT, size,
-                                   encryptionInitializationVector, res, buffer))
+    switch (res[0])
     {
-        /* Set the data */
-        if (client_write(buffer, AES_BLOCK_SIZE))
-        {
-            status = true; /**< Set the status */
-        }
+    case SESSION_OKAY:
+        response[0] = STATUS_OKAY;
+        break;
+    case SESSION_ERROR:
+        response[0] = STATUS_ERROR;
+        break;
+    default:
+        response[0] = res[0];
+        break;
     }
 
-    return status; /**< Return the status */
+    if (size > 1)
+    {
+        memcpy(response + 1, res + 1, size - 1);
+    }
+
+    if (0 == mbedtls_aes_crypt_cbc(&aesEncryptionContext, MBEDTLS_AES_ENCRYPT, sizeof(response), encryptionInitializationVector, response, buffer))
+    {
+        status = client_write(buffer, AES_BLOCK_SIZE);
+    }
+
+    return status;
 }

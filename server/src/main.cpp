@@ -24,7 +24,7 @@ void loop()
     digitalWrite(GPIO_NUM_32, LOW); /**< Initial Relay state */
 
     /* Handle the request */
-    if (request == SESSION_REQ_TOGGLE_LED)
+    if (request == SESSION_TOGGLE_LED)
     {
         static uint8_t state = LOW;
         state = (state == LOW) ? HIGH : LOW;
@@ -32,25 +32,25 @@ void loop()
 
         uint8_t buffer[2];
         buffer[1] = digitalRead(GPIO_NUM_21);
-        buffer[0] = (state == buffer[1]) ? SESSION_RES_OKAY : SESSION_RES_ERROR;
+        buffer[0] = (state == buffer[1]) ? SESSION_OKAY : SESSION_ERROR;
 
         /* Respond to the request */
         if (!session_response(buffer, sizeof(buffer)))
         {
-            request = SESSION_REQ_ERROR;
+            request = SESSION_ERROR;
         }
     }
     /* Request the temperature */
-    else if (request == SESSION_REQ_TEMPERATURE)
+    else if (request == SESSION_TEMPERATURE)
     {
         uint8_t buffer[7] = {0};
-        buffer[0] = SESSION_RES_OKAY;
+        buffer[0] = SESSION_OKAY;
         sprintf((char *)&buffer[1], "%2.2f", temperatureRead());
 
         /* Respond to the request */
         if (!session_response(buffer, sizeof(buffer)))
         {
-            request = SESSION_REQ_ERROR;
+            request = SESSION_ERROR;
         }
     }
     else
@@ -59,7 +59,7 @@ void loop()
     }
 
     /* Handle the error */
-    if (request == SESSION_REQ_ERROR)
+    if (request == SESSION_ERROR)
     {
         digitalWrite(GPIO_NUM_32, HIGH); /**< Turn on the Relay */
     }

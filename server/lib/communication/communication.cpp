@@ -20,7 +20,7 @@ bool communication_init()
     return Serial;
 }
 
-size_t client_read(uint8_t *buffer, size_t blen)
+size_t communication_read(uint8_t *buffer, size_t blen)
 {
     while (0 == Serial.available())
     {
@@ -30,7 +30,7 @@ size_t client_read(uint8_t *buffer, size_t blen)
     return Serial.readBytes(buffer, blen);
 }
 
-bool client_write(uint8_t *buffer, size_t dlen)
+bool communication_write(uint8_t *buffer, size_t dlen)
 {
     return (dlen == Serial.write(buffer, dlen));
 }

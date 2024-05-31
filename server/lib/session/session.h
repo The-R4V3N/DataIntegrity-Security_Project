@@ -4,30 +4,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/**
- * @brief Session request types
- *
- */
 enum
 {
-    SESSION_REQ_OKAY,
-    SESSION_REQ_ERROR,
-    SESSION_REQ_TOGGLE_LED,
-    SESSION_REQ_TEMPERATURE
-};
-
-/**
- * @brief Session response types
- *
- */
-enum
-{
-    SESSION_RES_OKAY,
-    SESSION_RES_ERROR,
-    SESSION_RES_EXPIRED,
-    SESSION_RES_INVALID,
-    SESSION_RES_HASH_ERROR,
-    SESSION_RES_BAD_REQUEST
+    SESSION_OKAY,
+    SESSION_ERROR,
+    SESSION_TOGGLE_LED,
+    SESSION_TEMPERATURE
 };
 
 /**
