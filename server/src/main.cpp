@@ -4,6 +4,7 @@
 void setup()
 {
     pinMode(GPIO_NUM_21, OUTPUT); /**< Initialize the LED pin */
+    // TODO Remove this line below it is just for Debugging
     pinMode(GPIO_NUM_32, OUTPUT); /**< Initialize the Relay pin */
 
     if (!session_init())
@@ -30,8 +31,8 @@ void loop()
         digitalWrite(GPIO_NUM_21, state);
 
         uint8_t buffer[2];
-        buffer[1] = state;
-        buffer[0] = (state == digitalRead(GPIO_NUM_21)) ? SESSION_RES_OKAY : SESSION_RES_ERROR;
+        buffer[1] = digitalRead(GPIO_NUM_21);
+        buffer[0] = (state == buffer[1]) ? SESSION_RES_OKAY : SESSION_RES_ERROR;
 
         /* Respond to the request */
         if (!session_response(buffer, sizeof(buffer)))
