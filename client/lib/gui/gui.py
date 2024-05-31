@@ -221,7 +221,7 @@ class GUI(tk.Frame):
     def get_temperature(self):
         """Gets the temperature from the server."""
         if self.session_active:
-            self.send_command(0x01)
+            self.send_command(0x03)
         else:
             self.log("No active session")
 
