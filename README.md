@@ -103,5 +103,7 @@ Execute `python3 -m client.src.client` in the root directory of the project to s
 
 - **Detailed Documentation:**
 Find comprehensive documentation for each module in the `Respective README file` folder.
+- **Client README:** [Client README](client/README.md)
+- **Server README:** [Server README](server/README.md)
 
 ![The-R4V3N](https://github.com/The-R4V3N.png?size=50) More about me can be found on my [Website](https://www.oliver-joisten.se)

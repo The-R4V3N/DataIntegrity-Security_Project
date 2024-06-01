@@ -6,10 +6,10 @@ Welcome to the server-side of my project, developed using C++ and PlatformIO. Th
 
 The server-side application is organized into the following C++ modules:
 
-1. **`SessionManager.cpp`** - Manages client sessions, particularly ensuring efficient handling of a single session at a time, as per project requirements.
-2. **`CommunicationHandler.cpp`** - Handles the communication protocol with the client, using secure methods as specified in the project requirements.
-3. **`SecurityHandler.cpp`** - Implements advanced security measures, including HMAC-SHA256, AES-256, and RSA-2048 encryption protocols, to secure data transmission.
-4. **`HardwareController.cpp`** - Interfaces with the Olimax ESP32-EVB's hardware components, such as sensors and LEDs, to perform operations based on client requests.
+1. **`Session Module`** - Manages client sessions, particularly ensuring efficient handling of a single session at a time, as per project requirements.
+It also handels the advanced security measures, including HMAC-SHA256, AES-256, and RSA-2048 encryption protocols, to secure data transmission.
+2. **`Communication Module`** - Handles the communication protocol with the client, using secure methods as specified in the project requirements.
+3. **`Main Source`** - The main source file that orchestrates the server-side application, including session management and communication handling.
 
 ## Features
 
@@ -44,6 +44,5 @@ To build and run the server-side application on the ESP32-EVB:
 
 1. **Build the Project:** Execute `platformio run` in the server directory to compile the project.
 2. **Upload to the ESP32-EVB:** Use `platformio run --target upload` to upload the compiled code to the Olimax ESP32-EVB board.
-3. **Serial Monitoring (Optional):** Use `platformio device monitor` for debugging or monitoring output.
 
 With this setup, you are ready to deploy and operate the server-side of my project on the Olimax ESP32-EVB development board!
