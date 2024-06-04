@@ -68,6 +68,9 @@ class Session:
             print("Hashing Error")
             self.ser.close_connection()
         return buffer[0: size]
+    
+    def close_session(self):
+        self.ser.close_connection()
 
     def key_exchange(self) -> bool:
 

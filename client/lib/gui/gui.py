@@ -109,30 +109,31 @@ class GUI(tk.Frame):
 
     def establish_session(self):
         if self.session and not self.session_active:
-            if self.session_active != True:
                 self.session.authenticate()
                 self.session_active = True
                 self.update_button_state(True)
                 self.log("Session Established and Active.")
-            else:
+                self.session_button.config(text="Close Session")
+        elif self.session_active:
+                self.close_session()
+                self.session_button.config(text="Establish Session")
+        elif not self.session:
                 self.log(
                     "Authentication failed. Please check the session and try again.")
-        elif self.session_active:
-            self.log("Session is already active.")
         else:
             self.log(
                 "Please select a serial port and exchange keys before establishing the session.")
 
     def close_session(self):
-        self.session.close()
+        self.session.close_session()
         self.session_active = False
-        self.log("Session closed")
-        self.update_button_state()
+        self.update_button_state(False)
+        self.log("Session is closed")
 
     def get_temperature(self):
         if self.session_active:
             response = self.session.send_command(0x03)
-            self.log(f"Temperature: {response.decode('utf-8')}")
+            self.log(f"Temperature: {response.decode('utf-8')}" + "°C")
 
     def toggle_led(self):
         if self.session_active:
