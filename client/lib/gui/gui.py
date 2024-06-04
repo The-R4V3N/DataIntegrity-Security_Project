@@ -75,22 +75,15 @@ class GUI(tk.Frame):
 
         self.update_button_state(False)
 
-    def port_selected(self, port):
-        if not self.session_active:
-            self.session = Session(port)
-            self.session_active = True
 
     def on_port_selected(self, event=None):
         selected_port = self.serial_port_combobox.get()
         if self.session and self.session.port == selected_port:
             self.log("Key exchange already done for this port.")
             self.root.update()
-
         else:
             self.session = Session(selected_port)
-            self.log("Exchanging Security Keys, Please Wait...")
             status = self.session.key_exchange()
-            self.root.update()
 
             if status == True:
                 self.log("Session Keys are successfully exchanged.")
@@ -138,13 +131,11 @@ class GUI(tk.Frame):
     def toggle_led(self):
         if self.session_active:
             requested = self.session.send_command(0x02)
-            if requested:
-                self.log("Toggle LED requested")
-            response = self.session.client_read("6")
-            if response == ("6"):
-                self.log(f"LED Toggled: {response.decode('utf-8')}")
+            if requested[0] == True:
+                self.log("Toggle LED On")
             else:
-                print("Failed to toggle LED: No response")
+                self.log("Toggle LED Off")
+
 
     def log(self, message):
         if self.log_text_exists():

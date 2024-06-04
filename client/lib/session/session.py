@@ -39,22 +39,18 @@ class Session:
 
     def get_temperature(self):
         received = self.requests(int(0x03)).decode("utf-8")
-        print("Temperature is requested")
         return received
 
     def toggle_led(self):
         received = self.requests(int(0x02)).decode("utf-8")
-        print(received)
-        if received == "6":
-            print("LED is toggled")
-        return received
+        if received == 0:
+            return received
 
     def client_send(self, buffer: bytes):
         self.hmac_hash.update(buffer)
         buffer += self.hmac_hash.digest()
         sent_length = self.ser.communication_send(buffer)
         if len(buffer) != sent_length:
-            print("Error sending data")
             self.ser.close_connection()
 
     def client_read(self, size: int) -> bytes:
@@ -65,7 +61,6 @@ class Session:
         temp = self.hmac_hash.digest()
 
         if temp != buf:
-            print("Hashing Error")
             self.ser.close_connection()
         return buffer[0: size]
     
@@ -156,9 +151,8 @@ class Session:
         self.client_send(buffer)
 
         buffer = self.client_read(cipher.AES.block_size)
-        print(buffer[: 6]) # print the first 6 bytes of the buffer for Debugging purposes
         buffer = self.aes_key.decrypt(buffer)
-        print(buffer[0]) # print the first byte of the buffer for Debugging purposes
+
 
         # maybe change it to a swicht statement to get all the responses
         if buffer[0] == 0x00:
