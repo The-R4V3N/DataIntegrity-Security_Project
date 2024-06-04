@@ -37,14 +37,17 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 - Project Overview
 
 ![Project Overview](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/overview.png)
+![Project Overview](/media/overview.png)
 
 - System Architecture UML Diagram
 
 ![System Achitecture](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sytem_architecture.png)
+![System Achitecture](/media/sytem_architecture.png)
 
 - Sequence Diagram
 
 ![Sequence Diagram](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sequence_diagram%20.png)
+![Sequence Diagram](/media/sequence_diagram%20.png)
 
 ## Features
 
@@ -74,11 +77,19 @@ Execute `platformio run` in the server directory to compile the project.
 
 ### Execute
 
+-**Using Makefile:**
+This project has a Makefile that can be used to build and run the project.
+To buiild and run the server execute `make server` in the root of the project.
+To run the client execute `make client` in the root of the project.
+Additionally, you can run `make clean` to remove all compiled files and cache files.
+You also have the option to use `make .PHONY` to run all the above commands in sequence. Starting with the server, then the client.
+
 -**Run the Server:**
 Execute `platformio run --target upload` to upload the compiled code to the Olimax ESP32-EVB board.
 
 -**Run the Client:**
 Execute `python3 -m client.src.client` in the root directory of the project to start the client application.
+
 
 ### Desktop Client and Server
 
