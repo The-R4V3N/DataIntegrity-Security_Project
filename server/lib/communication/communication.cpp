@@ -14,7 +14,7 @@
 
 #define BAUDRATE 115200
 
-bool communication_init()
+bool communication_init(void)
 {
     Serial.begin(BAUDRATE);
     return Serial;

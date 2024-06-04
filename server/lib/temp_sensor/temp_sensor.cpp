@@ -11,12 +11,15 @@
 
 #include "temp_sensor.h"
 
-void temp_sensor_init()
+void temp_sensor_init(void)
 {
     ;
 }
 
-float temp_sensor_read()
+float temp_sensor_read(void)
 {
-    return (temp_sensor_read() - 23) / 1.8;
+    uint8_t temp_farenheit = temperatureRead();
+    float temp_celsius = (temp_farenheit - 32) / 1.8;
+    
+    return (temp_celsius);
 }

@@ -19,7 +19,7 @@
  *
  * This function is used to initialize the internal temperature sensor.
  */
-void temp_sensor_init();
+void temp_sensor_init(void);
 
 /**
  * @brief Reads the temperature from the internal temperature sensor.
@@ -28,6 +28,6 @@ void temp_sensor_init();
  *
  * @return The temperature read from the internal temperature sensor.
  */
-float temp_sensor_read();
+float temp_sensor_read(void);
 
 #endif // TEMP_SENSOR_H

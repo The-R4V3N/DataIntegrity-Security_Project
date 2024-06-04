@@ -1,4 +1,5 @@
 #include "session.h"
+#include "temp_sensor.h"
 #include <Arduino.h>
 
 void setup(void)
@@ -46,7 +47,7 @@ void loop(void)
     {
         uint8_t buffer[7] = {0};
         buffer[0] = SESSION_OKAY;
-        sprintf((char *)&buffer[1], "%2.2f", temperatureRead());
+        sprintf((char *)&buffer[1], "%2.2f", temp_sensor_read());
 
         /* Respond to the request */
         if (!session_response(buffer, sizeof(buffer)))
