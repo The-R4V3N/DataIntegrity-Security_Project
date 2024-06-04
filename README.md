@@ -44,7 +44,7 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 - Sequence Security Diagram
 
-![Sequence Security Diagram](/media/sequence_security_diagram.png)
+![Sequence Security Diagram](/media/security.png)
 
 - Sequence Diagram
 
