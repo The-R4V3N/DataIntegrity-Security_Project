@@ -87,7 +87,7 @@ class Session:
 
             # Decrypt the server's public key
             SERVER_PUBLIC_KEY = self.client_public_rsa.decrypt(
-                buffer[0: self.RSA_SIZE])
+                buffer[0 : self.RSA_SIZE])
             SERVER_PUBLIC_KEY += self.client_public_rsa.decrypt(
                 buffer[self.RSA_SIZE: 2 * self.RSA_SIZE])
             self.server_public_rsa = pk.RSA().from_DER(SERVER_PUBLIC_KEY)
@@ -164,7 +164,7 @@ class Session:
         if buffer[0] == 0x00:
             return buffer[1:6]
         else:
-            return (b"Command failed with error code: 1")
+            return (b"Command failed with error code: 1(SESSION_ERROR)")
 
     def send_command(self, command: int) -> bytes:
         return self.requests(command)
