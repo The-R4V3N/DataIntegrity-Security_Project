@@ -18,7 +18,6 @@ enum
     STATUS_HASH_ERROR,
     STATUS_BAD_REQUEST,
     STATUS_INVALID_SESSION,
-    LED_TOGGLED
 };
 
 constexpr int AES_SIZE{32};
@@ -137,7 +136,7 @@ static void session_establish(uint8_t *buf)
 {
     session_id = 0;
     size_t olen, length;
-    uint8_t cipher[2 * RSA_SIZE]{0};
+    uint8_t cipher[RSA_SIZE]{0};
 
     assert(0 == mbedtls_pk_decrypt(&server_ctx, buf, RSA_SIZE, cipher, &olen,
                                    RSA_SIZE, mbedtls_ctr_drbg_random, &ctr_drbg));
@@ -258,8 +257,6 @@ int session_request(void)
                             break;
 
                         case SESSION_TOGGLE_LED:
-                            response = LED_TOGGLED;
-                            break;
                         case SESSION_TEMPERATURE:
                             request = (int)temp[0];
                             break;
@@ -285,26 +282,26 @@ int session_request(void)
             {
                 request = SESSION_ERROR;
                 response = STATUS_ERROR;
-            }
-        }
-        else
-        {
-            request = SESSION_ERROR;
-            response = STATUS_INVALID_SESSION;
-        }
+            }  
     }
     else
     {
         request = SESSION_ERROR;
-        response = STATUS_HASH_ERROR;
+        response = STATUS_INVALID_SESSION;
     }
+}
+else
+{
+    request = SESSION_ERROR;
+    response = STATUS_HASH_ERROR;
+}
 
-    if ((request == SESSION_CLOSE) || (request == SESSION_ERROR))
-    {
-        assert(session_response(&response, sizeof(response)));
-    }
+if ((request == SESSION_CLOSE) || (request == SESSION_ERROR))
+{
+    assert(session_response(&response, sizeof(response)));
+}
 
-    return request;
+return request;
 }
 
 bool session_response(const uint8_t *res, size_t size)
