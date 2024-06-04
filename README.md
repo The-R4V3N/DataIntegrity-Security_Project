@@ -90,7 +90,6 @@ Execute `platformio run --target upload` to upload the compiled code to the Olim
 -**Run the Client:**
 Execute `python3 -m client.src.client` in the root directory of the project to start the client application.
 
-
 ### Desktop Client and Server
 
 - The Desktop Client  is a Python application with a basic GUI made with Tkinter.
