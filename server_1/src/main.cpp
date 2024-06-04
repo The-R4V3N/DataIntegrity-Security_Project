@@ -1,7 +1,7 @@
 #include "session.h"
 #include <Arduino.h>
 
-void setup(void)
+void setup()
 {
     pinMode(GPIO_NUM_21, OUTPUT); /**< Initialize the LED pin */
     // TODO Remove this line below it is just for Debugging
@@ -17,7 +17,7 @@ void setup(void)
         }
     }
 }
-void loop(void)
+void loop()
 {
     int request = session_request(); /**< Request a session */
 

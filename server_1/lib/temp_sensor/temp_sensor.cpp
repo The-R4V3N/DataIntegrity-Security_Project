@@ -10,6 +10,7 @@
  */
 
 #include "temp_sensor.h"
+#include "bsp.h"
 
 void temp_sensor_init()
 {
