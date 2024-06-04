@@ -36,17 +36,18 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 - Project Overview
 
-![Project Overview](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/overview.png)
 ![Project Overview](/media/overview.png)
 
 - System Architecture UML Diagram
 
-![System Achitecture](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sytem_architecture.png)
 ![System Achitecture](/media/sytem_architecture.png)
+
+- Sequence Security Diagram
+
+![Sequence Security Diagram](/media/sequence_security_diagram.png)
 
 - Sequence Diagram
 
-![Sequence Diagram](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sequence_diagram%20.png)
 ![Sequence Diagram](/media/sequence_diagram%20.png)
 
 ## Features
