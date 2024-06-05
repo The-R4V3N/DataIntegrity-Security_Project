@@ -1,5 +1,10 @@
-# Author: Oliver Joisten
-# Description: This file contains the graphical user interface module which is used in the client.py file to display the GUI.
+"""
+    * @File: gui.py
+    * @Author: Oliver Joisten   (contact@oliver-joisten.se)
+    * @Description: This file contains the graphical user interface module which is used in the client.py file to display the GUI.
+    * @Version: 1.0
+    * @Created: 2021-06-15
+"""
 
 import tkinter as tk
 from tkinter import scrolledtext
@@ -125,25 +130,25 @@ class GUI(tk.Frame):
 
     def get_temperature(self):
         if self.session_active:
-            response = self.session.send_command(0x03)
-            self.log(f"Temperature: {response.decode('utf-8')}" + "°C")
+            response = self.session.requests(0x03)
+            self.log(response) 
+
 
     def toggle_led(self):
         if self.session_active:
-            requested = self.session.send_command(0x02)
-            if requested[0] == True:
-                self.log("Toggle LED On")
-            else:
-                self.log("Toggle LED Off")
+            response = self.session.requests(0x02)
+            self.log(response)
+
+    def error_handling(self, message):
+        
+        self.log(message)
 
 
     def log(self, message):
-        if self.log_text_exists():
-            self.log_text.config(state=tk.NORMAL)
-            self.log_text.insert(tk.END, message + "\n")
-            self.log_text.config(state=tk.DISABLED)
-        else:
-            print("Attempted to log to a non-existent widget:", message)
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.insert(tk.END, message + "\n")
+        self.log_text.config(state=tk.DISABLED)
+
 
     def clear_log(self):
         self.log_text.config(state=tk.NORMAL)

@@ -1,5 +1,10 @@
-# Autor: Oliver Joisten
-# Desccription: This file contains a event handler and a Serial communication class which is used to send and receive messages from the server.
+"""
+    * @File: communication.py 
+    * @Autor: Oliver Joisten    (contact@oliver-joisten.se)
+    * @Desccription: This file contains a event handler and a Serial communication class which is used to send and receive messages from the server.
+    * @Version: 1.0
+    * @Created: 2021-06-15
+"""
 
 import serial
 

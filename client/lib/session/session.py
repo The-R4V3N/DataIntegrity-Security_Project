@@ -1,9 +1,22 @@
-# Autor: Oliver Joisten
-# Desccription: This file contains the session class which is used to establish a connection with the server and send requests to it.
+"""
+    * @File: session.py
+    * @Autor: Oliver Joisten (contact@oliver-joisten.se)
+    * @Desccription: This file contains the session class which is used to establish a connection with the server and send requests to it.
+    * @Version: 1.0
+    * @Created: 2021-06-15
+"""
 
 from mbedtls import pk, hmac, hashlib, cipher
 from client.lib.communication.communication import Communication
 
+response_codes = {
+    "00": "STATUS_OKAY",
+    "01": "STATUS_ERROR",
+    "02": "STATUS_EXPIRED",
+    "03": "STATUS_HASH_ERROR",
+    "04": "STATUS_BAD_REQUEST",
+    "05": "STATUS_INVALID_SESSION",
+}
 
 class Session:
     RESPONSE = "SESSION_OKAY"
@@ -26,8 +39,8 @@ class Session:
             self.RSA_SIZE * 8, self.EXPONENT)
         self.server_public_rsa = None
         self.aes_key = None
-        # self.key_exchange()
         Session.CONNECTED = port
+        self.status = None
 
     def session_connected(self):
         Session.CONNECTED
@@ -42,9 +55,9 @@ class Session:
         return received
 
     def toggle_led(self):
-        received = self.requests(int(0x02)).decode("utf-8")
-        if received == 0:
-            return received
+            received = self.requests(int(0x02)).decode("utf-8")
+            if received == 0:
+                return received
 
     def client_send(self, buffer: bytes):
         self.hmac_hash.update(buffer)
@@ -65,7 +78,8 @@ class Session:
         return buffer[0: size]
     
     def close_session(self):
-        self.ser.close_connection()
+        # self.ser.close_connection()
+        pass
 
     def key_exchange(self) -> bool:
 
@@ -115,7 +129,7 @@ class Session:
 
         except Exception as e:
             print(e)
-            # self.Communication.close_connection()
+            self.close_session()
 
     def authenticate(self) -> bool:
         try:
@@ -138,9 +152,9 @@ class Session:
 
         except Exception as e:
             print(e)
-            self.close_connection()
+            self.close_session()
 
-    def requests(self, invalue) -> bytes:
+    def requests(self, invalue) -> str:
         request = bytes([invalue])
         buffer = request + self.SESSION_ID
         padding_length = cipher.AES.block_size - \
@@ -150,15 +164,29 @@ class Session:
 
         self.client_send(buffer)
 
+
         buffer = self.client_read(cipher.AES.block_size)
         buffer = self.aes_key.decrypt(buffer)
 
-
-        # maybe change it to a swicht statement to get all the responses
         if buffer[0] == 0x00:
-            return buffer[1:6]
-        else:
-            return (b"Command failed with error code: 1(SESSION_ERROR)")
 
-    def send_command(self, command: int) -> bytes:
-        return self.requests(command)
+            result = str(buffer[1:6], "utf-8").replace('\x00', '').strip()
+
+            led_states = ["ON", "OFF"]
+
+            if result in led_states:
+                return "Led =>: " + result
+
+            try:
+                temp = float(result)
+                return "Temperature =>: " + str(temp) + " C"
+            except ValueError:
+                return "Unexpected result =>: " + result
+
+
+        else:
+            error_code = str(buffer[:1].hex())
+            if error_code in response_codes:
+                return f"Error code =>: {response_codes[error_code]}"
+            else:
+                return f"Error code =>: Unknown error ({error_code})"
