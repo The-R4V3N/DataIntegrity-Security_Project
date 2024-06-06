@@ -40,15 +40,15 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 - System Architecture UML Diagram
 
-![System Achitecture](/media/sytem_architecture.png)
+![System Achitecture](/media/system_uml.png)
 
 - Sequence Security Diagram
 
-![Sequence Security Diagram](/media/security.png)
+![Sequence Security Diagram](/media/security_secuence_diagram.png)
 
 - Sequence Diagram
 
-![Sequence Diagram](/media/sequence_diagram%20.png)
+![Sequence Diagram](/media/system_sequence_uml.png)
 
 ## Features
 
