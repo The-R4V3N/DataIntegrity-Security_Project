@@ -23,7 +23,12 @@ class Communication:
     def communication_read(self, size: int) -> bytes:
         return self.ser.read(size)
 
-    def close_connection(self):
+    def communication_open(self) -> bool:
+        if not self.ser.is_open:
+            self.ser.open()
+        return self.ser.is_open
+    
+    def communication_close(self):
         if self.ser:
             self.ser.close()
-            self.ser = None
+

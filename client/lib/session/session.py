@@ -74,13 +74,12 @@ class Session:
         temp = self.hmac_hash.digest()
 
         if temp != buf:
-            self.ser.close_connection()
+            self.ser.communication_close()
         return buffer[0: size]
     
-    # TODO Fix the close_session method
     def close_session(self):
-        #self.ser.close_connection()
-        pass
+        self.ser.communication_close()
+
 
     def key_exchange(self) -> bool:
 
@@ -133,27 +132,29 @@ class Session:
             self.close_session()
 
     def authenticate(self) -> bool:
-        try:
-            connected = False
+        if self.ser.communication_open():
+            try:
+                connected = False
 
-            buffer = self.client_public_rsa.sign(self.SECRET_KEY, "SHA256")
-            buffer = self.server_public_rsa.encrypt(
-                buffer[0: self.RSA_SIZE // 2]) + self.server_public_rsa.encrypt(buffer[self.RSA_SIZE // 2: self.RSA_SIZE])
-            self.client_send(buffer)
+                buffer = self.client_public_rsa.sign(self.SECRET_KEY, "SHA256")
+                buffer = self.server_public_rsa.encrypt(
+                    buffer[0: self.RSA_SIZE // 2]) + self.server_public_rsa.encrypt(buffer[self.RSA_SIZE // 2: self.RSA_SIZE])
+                self.client_send(buffer)
 
-            buffer = self.client_read(self.RSA_SIZE)
-            buffer = self.client_public_rsa.decrypt(buffer)
-            self.SESSION_ID = buffer[0:8]
+                buffer = self.client_read(self.RSA_SIZE)
+                buffer = self.client_public_rsa.decrypt(buffer)
+                self.SESSION_ID = buffer[0:8]
 
-            self.aes_key = cipher.AES.new(
-                buffer[24: 56], cipher.MODE_CBC, buffer[8: 24])
-            connected = True
+                self.aes_key = cipher.AES.new(
+                    buffer[24: 56], cipher.MODE_CBC, buffer[8: 24])
+                connected = True
 
-            return connected
+                return connected
 
-        except Exception as e:
-            print(e)
-            self.close_session()
+            except Exception as e:
+                print(e)
+        else:
+            self.ser.communication_open()
 
     def requests(self, invalue) -> str:
         request = bytes([invalue])
