@@ -43,7 +43,6 @@
     /* Private macro -------------------------------------------------------------*/
 
 #define SESSION_CLOSE 0xFF /**< Close the session */
-#define MIN_ACTIVITY 30000 /**< Minimum activity time */
 
     /* Private variables ---------------------------------------------------------*/
 
@@ -53,6 +52,7 @@
     constexpr int HASH_SIZE{32};      /**< Hash size */
     constexpr int EXPONENT{65537};    /**< Exponent */
     constexpr int AES_BLOCK_SIZE{16}; /**< AES block size */
+    constexpr int KEEP_ALIVE{30000};  /**< Keep alive time */
 
     static mbedtls_aes_context aes_ctx;       /**< AES context */
     static mbedtls_md_context_t hmac_ctx;     /**< HMAC context */
@@ -62,7 +62,7 @@
     static mbedtls_ctr_drbg_context ctr_drbg; /**< CTR DRBG context */
 
     static uint64_t session_id{0};            /**< Session ID */
-    static uint32_t prev_millis{0};           /**< Previous millis to reset the timer */
+    static uint32_t accessed{0};              /**< Accessed Timer */
     static uint8_t aes_key[AES_SIZE]{0};      /**< AES key */
     static uint8_t enc_iv[AES_BLOCK_SIZE]{0}; /**< Encryption IV */
     static uint8_t dec_iv[AES_BLOCK_SIZE]{0}; /**< Decryption IV */
@@ -104,7 +104,6 @@
             length = 0; /**< Set the length to 0 */
         }
 
-        // prev_millis = millis();
         return length; /**< Return the length */
 }
 
@@ -260,7 +259,7 @@ static void session_establish(uint8_t *buf)
 
 /* Exported user code --------------------------------------------------------*/
 
-bool session_init(void)
+bool session_init()
 {
     bool status = false; /**< The status of the session */
 
@@ -330,10 +329,10 @@ int session_request(void)
     {
         if (session_id != 0)
         {
-            uint32_t timer = millis(); /**< Millis */
-            if (timer - prev_millis > MIN_ACTIVITY)
+            uint32_t timer = millis(); /**< Timer in milli seconds */
+            if (timer - accessed <= KEEP_ALIVE)
             {
-                prev_millis = timer; /**< Set the previous millis to the timer */
+                accessed = timer; /**< Set the accessed timer to the timer */
 
                 uint8_t temp[AES_BLOCK_SIZE]{0}; /**< The temporary buffer */
 
@@ -357,31 +356,27 @@ int session_request(void)
                         }
                         else
                         {
-                            request = SESSION_ERROR;
-                            response = STATUS_BAD_REQUEST;
+                            response = STATUS_INVALID_SESSION;
                         }
                     }
                     else
                     {
-                        request = SESSION_ERROR;
-                        response = STATUS_INVALID_SESSION;
+                        response = STATUS_BAD_REQUEST;
                     }
                 }
                 else
                 {
-                    request = SESSION_ERROR;
                     response = STATUS_ERROR;
                 }
             }
             else
             {
-                response = STATUS_EXPIRED;
                 session_id = 0;
+                response = STATUS_EXPIRED;
             }
         }
         else
         {
-
             response = STATUS_INVALID_SESSION;
         }
     }
@@ -434,30 +429,3 @@ bool session_response(const uint8_t *res, size_t size)
 
     return status;
 }
-
-// bool session_response(bool success, const uint8_t *res, size_t size)
-// {
-//     size_t length = 1;
-//     uint8_t response[AES_BLOCK_SIZE] = {0};
-
-//     response[0] = success ? STATUS_OKAY : STATUS_ERROR;
-
-//     if ((res != nullptr) && (size > 0))
-//     {
-//         size_t len = 1;
-//         uint8_t response[AES_BLOCK_SIZE] = {0};
-//         response[0] = success ? STATUS_OKAY : STATUS_ERROR;
-//         if ((res != nullptr) && (size > 0))
-//         {
-//             memcpy(response + length, res, size);
-//             length += size;
-//         }
-//         return client_write(response, len);
-//     }
-//     {
-//         memcpy(response + length, res, size);
-//         length += size;
-//     }
-
-//     return client_write(response, length);
-// }

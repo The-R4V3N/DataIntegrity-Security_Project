@@ -10,7 +10,6 @@ import serial
 
 BAUDRATE = 115200
 
-
 class Communication:
     ser = None
 

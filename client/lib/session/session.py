@@ -77,8 +77,9 @@ class Session:
             self.ser.close_connection()
         return buffer[0: size]
     
+    # TODO Fix the close_session method
     def close_session(self):
-        # self.ser.close_connection()
+        #self.ser.close_connection()
         pass
 
     def key_exchange(self) -> bool:
