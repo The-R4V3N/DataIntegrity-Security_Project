@@ -10,12 +10,12 @@ from mbedtls import pk, hmac, hashlib, cipher
 from client.lib.communication.communication import Communication
 
 response_codes = {
-    "00": "STATUS_OKAY",
-    "01": "STATUS_ERROR",
-    "02": "STATUS_EXPIRED",
-    "03": "STATUS_HASH_ERROR",
-    "04": "STATUS_BAD_REQUEST",
-    "05": "STATUS_INVALID_SESSION",
+    "00": "STATUS OKAY",
+    "01": "STATUS ERROR",
+    "02": "STATUS EXPIRED",
+    "03": "STATUS HASH ERROR",
+    "04": "STATUS BAD REQUEST",
+    "05": "STATUS INVALID SESSION",
 }
 
 class Session:
