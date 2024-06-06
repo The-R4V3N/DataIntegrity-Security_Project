@@ -1,57 +1,55 @@
 /**
  * @file communication.h
  * @author Oliver Joisten (contact@oliver-joisten.se)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2024-06-05
- * 
+ *
  * @copyright Copyright (c) 2024
- * 
+ *
  */
 
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
-    /* Includes ------------------------------------------------------------------*/
+/* Includes ------------------------------------------------------------------*/
 
-#include <stddef.h>
 #include <stdint.h>
+#include <stddef.h>
 
-    /* Exported defines ----------------------------------------------------------*/
+/* Exported defines ----------------------------------------------------------*/
 
-    /* Exported types ------------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
 
-    /* Exported constants --------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
 
-    /* Exported macro ------------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
 
-    /* Exported functions prototypes ---------------------------------------------*/
+/* Exported functions prototypes ---------------------------------------------*/
 
-    /**
-     * @brief Initialize the communication module
-     *
-     * @return true if the communication module was successfully initialized
-     * @return false if the communication module could not be initialized
-     */
-    bool communication_init(void);
+/**
+ * @brief Initialize the communication module
+ *
+ * @return true if the communication module was successfully initialized else false
+ */
+bool communication_init(void);
 
-    /**
-     * @brief Read data from the communication module
-     *
-     * @param buffer the buffer to store the data
-     * @param blen the length of the buffer
-     * @return size_t the length of the data
-     */
-    size_t communication_read(uint8_t *buffer, size_t blen);
+/**
+ * @brief Read data from the communication module
+ *
+ * @param buffer the buffer to store the data
+ * @param dlen the length of the buffer
+ * @return size_t the length of the data
+ */
+bool communication_write(const uint8_t *data, size_t dlen);
 
-    /**
-     * @brief Write data to the communication module
-     *
-     * @param buffer the data to write
-     * @param dlen the length of the data
-     * @return true if the data was successfully written
-     * @return false if the data could not be written
-     */
-    bool communication_write(uint8_t *buffer, size_t dlen);
+/**
+ * @brief Read data from the communication module
+ *
+ * @param buf the buffer to store the data
+ * @param blen the length of the buffer
+ * @return size_t the length of the data
+ */
+size_t communication_read(uint8_t *buf, size_t blen);
 
 #endif // COMMUNICATION_H

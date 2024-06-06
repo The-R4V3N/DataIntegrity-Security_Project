@@ -9,35 +9,41 @@
  *
  */
 
-    /* Includes ------------------------------------------------------------------*/
+/* Includes ------------------------------------------------------------------*/
 
 #include "communication.h"
 #include <Arduino.h>
 
-    /* Private define ------------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
 
-    /* Private typedef -----------------------------------------------------------*/
+/* Private typedef -----------------------------------------------------------*/
 
-    /* Private macro -------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
 
 #define BAUDRATE 115200 /**< Baudrate for the Serial Communication */
 
-    /* Private variables ---------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
 
-    /* Static Assertions ---------------------------------------------------------*/
+/* Static Assertions ---------------------------------------------------------*/
 
-    /* Private function prototypes -----------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
 
-    /* Private user code ---------------------------------------------------------*/
+/* Private user code ---------------------------------------------------------*/
 
-    /* Exported user code --------------------------------------------------------*/
+/* Exported user code --------------------------------------------------------*/
 
 bool communication_init(void)
 {
     Serial.begin(BAUDRATE); /**< Initialize the Serial Communication */
     return Serial;          /**< Return the Serial Communication */
-} 
-size_t communication_read(uint8_t *buffer, size_t blen)
+}
+
+bool communication_write(const uint8_t *data, size_t dlen)
+{
+    return (dlen == Serial.write(data, dlen)); /**< Write the data to the Serial Communication */
+}
+
+size_t communication_read(uint8_t *buf, size_t blen)
 {
     /* Wait for the data to be available */
     while (0 == Serial.available())
@@ -45,11 +51,5 @@ size_t communication_read(uint8_t *buffer, size_t blen)
         ;
     }
 
-    return Serial.readBytes(buffer, blen); /**< Read the data from the Serial Communication */
+    return Serial.readBytes(buf, blen); /**< Read the data from the Serial Communication */
 }
-
-bool communication_write(uint8_t *buffer, size_t dlen)
-{
-    return (dlen == Serial.write(buffer, dlen)); /**< Write the data to the Serial Communication */
-}
-

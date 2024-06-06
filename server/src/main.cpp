@@ -17,25 +17,38 @@
 
     /* Private define ------------------------------------------------------------*/
 
-    /* Private typedef -----------------------------------------------------------*/
+#define ON "ON"
+#define OFF "OFF"
 
-    /* Private macro -------------------------------------------------------------*/
+/* Private typedef -----------------------------------------------------------*/
 
-    /* Private variables ---------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
 
-    /* Static Assertions ---------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
 
-    /* Private function prototypes -----------------------------------------------*/
+/* Static Assertions ---------------------------------------------------------*/
 
-    /* Private user code ---------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
 
-    /* Exported user code --------------------------------------------------------*/
+/* Private user code ---------------------------------------------------------*/
 
+/* Exported user code --------------------------------------------------------*/
+
+/**
+ * @brief Initializes the system setup.
+ * 
+ * This function sets up the necessary pins for the LED and Relay. It also checks if the session is initialized
+ * and blinks the LED if it is not. 
+ * 
+ * @note This function assumes that the GPIO_NUM_21 pin is used for the LED and GPIO_NUM_32 pin is used for the Relay.
+ * 
+ */
 void setup(void)
 {
     pinMode(GPIO_NUM_21, OUTPUT); /**< Initialize the LED pin */
     // TODO Remove this line below it is just for Debugging
     pinMode(GPIO_NUM_32, OUTPUT); /**< Initialize the Relay pin */
+
     /* Check for initialize Error*/
     if (!session_init())
     {
@@ -43,55 +56,84 @@ void setup(void)
         while (1)
         {
             digitalWrite(GPIO_NUM_21, !digitalRead(GPIO_NUM_21)); /**< Toggle the LED */
-            delay(1000);                                          /**< Delay for 1 seconds */
+            delay(500);                                          /**< Delay for 0.5 seconds */
         }
     }
 }
-void loop(void)
+
+/**
+ * @brief The main loop function that handles different session requests.
+ * 
+ * This function is responsible for handling different session requests and executing the corresponding actions.
+ * It receives a request from the session_request() function and performs the necessary operations based on the request type.
+ * The function supports the following request types:
+ * @retval #SESSION_ESTABLISH: Establishes a session with the client.
+ * @retval #SESSION_CLOSE: Closes the current session.
+ * @retval #SESSION_GET_TEMP: Retrieves the temperature reading and sends it as a response.
+ * @retval #SESSION_TOGGLE_LED: Toggles the state of an LED and sends the updated state as a response.
+ * 
+ * @note This function assumes that the necessary GPIO pins have been configured and initialized.
+ * 
+ * @note The function uses the session_establish(), session_close(), session_response(), and temperatureRead() functions to perform the required operations.
+ * 
+ * @note If an error occurs during the execution of a request, the function sets the request to SESSION_ERROR and takes appropriate action.
+ * 
+ * @note If the request is SESSION_ERROR, the function sets the GPIO_NUM_32 pin to HIGH.
+ */
+void loop()
 {
-    int request = session_request(); /**< Request a session */
+    char response[8] = {0};     /**< Response buffer */
+    static uint8_t state = LOW; /**< LED state */
 
-    // TODO Remove this line below it is just for Debugging if the seesion_request() is not working
-    digitalWrite(GPIO_NUM_32, LOW);
+    request_t request = session_request(); /**< Get the session request */
+    digitalWrite(GPIO_NUM_32, LOW);        /**< Reset the Relay pin */
 
-    /* Handle the request */
-    if (request == SESSION_TOGGLE_LED)
+    /* Handle the session request */
+    switch (request)
     {
-        static uint8_t state = LOW;             /**< The state of the LED initialized as LOW (0) */
-        state = (state == LOW) ? HIGH : LOW;    /**< Toggle the state of the LED */
-        digitalWrite(GPIO_NUM_21, state);       /**< Toggle the LED */
-
-        uint8_t buffer[2];                                                  /**< The buffer to store the response */
-        buffer[1] = digitalRead(GPIO_NUM_21);                               /**< Store the state of the LED */
-        buffer[0] = (state == buffer[1]) ? SESSION_OKAY : SESSION_ERROR;    /**< Store the response */
-
-        /* Respond to the request */
-        if (!session_response(buffer, sizeof(buffer)))
+    /* Handle the session establish request */    
+    case SESSION_ESTABLISH:
+        if (!session_establish())
         {
-            request = SESSION_ERROR;   /**< Set the request to error */
+            request = SESSION_ERROR;
         }
-    }
-    /* Request the temperature */
-    else if (request == SESSION_TEMPERATURE)
-    {
-        uint8_t buffer[7] = {0};                                    /**< The buffer to store the response */
-        buffer[0] = SESSION_OKAY;                                   /**< Store the response */
-        sprintf((char *)&buffer[1], "%2.2f", temp_sensor_read());   /**< Store the temperature in the buffer */
-
-        /* Respond to the request */
-        if (!session_response(buffer, sizeof(buffer)))
+        break;
+    /* Handle the session closed request */
+    case SESSION_CLOSE:
+        session_close();
+        if (!session_response(true, nullptr, 0))
         {
-            request = SESSION_ERROR;  /**< Set the request to error */
+            request = SESSION_ERROR;
         }
-    }
-    else
-    {
-        /* Do Nothing */
+        break;
+    /* Handle the session get temperature request */
+    case SESSION_GET_TEMP:
+        sprintf((char *)&response, "%2.2f", temperatureRead());
+
+        if (!session_response(true, (const uint8_t *)response, strlen(response)))
+        {
+            request = SESSION_ERROR;
+        }
+        break;
+    /* Handle the session toggle LED request */
+    case SESSION_TOGGLE_LED:
+        state = (state == LOW) ? HIGH : LOW;
+        digitalWrite(GPIO_NUM_21, state);
+        strcpy(response, (LOW == digitalRead(GPIO_NUM_21)) ? OFF : ON);
+
+        if (!session_response((state == digitalRead(GPIO_NUM_21)), (const uint8_t *)response, strlen(response)))
+        {
+            request = SESSION_ERROR;
+        }
+        break;
+
+    default:
+        break;
     }
 
-    /* Handle the Server error */
+    /* Handle the session error */
     if (request == SESSION_ERROR)
     {
-        digitalWrite(GPIO_NUM_32, HIGH); /**< Turn on the Relay */
+        digitalWrite(GPIO_NUM_32, HIGH);
     }
 }
