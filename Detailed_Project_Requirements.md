@@ -27,31 +27,31 @@
 ### Communication Handling (`communication.py`)
 
 - **Serial Protocol Implementation:**
-  - Communication shall be handled via a serial protocol.
-  - The design shall allow for the future addition of more protocols.
+  - Communication shall be handled via a serial protocol with the ESP32.
+  - The design shall allow for the future addition of more protocols if needed.
 
 - **Request-Response Mechanism:**
-  - The client shall send requests to the server.
-  - The server shall respond to the client's requests.
-  - The client shall handle and process responses from the server.
+  - The client shall send requests to the server and handle responses.
+  - The server shall respond to the client's requests efficiently.
+  - The client shall process and display the responses from the server.
 
 ### Security Management (`security.py`)
 
 - **Encryption Protocols:**
-  - The communication shall be secured using HMAC-SHA256, AES-256, and RSA-2048 protocols.
-  - The design shall permit the addition of more protocols in the future.
+  - All communications shall be secured using HMAC-SHA256, AES-256, and RSA-2048 encryption protocols.
+  - The design shall permit the addition of more security protocols in the future if needed.
 
 - **HMAC-SHA256 Usage:**
-  - All communications shall be hashed using the HMAC-SHA256 protocol.
+  - All communications shall be hashed using the HMAC-SHA256 protocol for integrity.
 
 - **RSA and AES Key Management:**
-  - The AES-256 key shall be encrypted and decrypted using the RSA-2048 protocol.
+  - AES-256 keys shall be encrypted and decrypted using the RSA-2048 protocol.
+  - The system shall manage the lifecycle of AES-256 and RSA-2048 keys, including generation, distribution, storage, rotation, and revocation.
 
 - **Key Lifecycle Managment:**
-  - Comprehensive key lifecycle management shall be included for AES-256 and RSA-2048 keys, including key generation, distribution, storage, rotation, and revocation.
-  - AES-256 keys shall be integrated to be randomly generated for each session, not reused across sessions.
-  - RSA-2048 keys shall be integrated to have a predefined expiration period, renewed upon expiry.
-  - Secure storage of keys, with AES keys in volatile memory, RSA keys in secure, non-volatile storage shall be included.
+  - AES-256 keys shall be randomly generated for each session and not reused across sessions.
+  - RSA-2048 keys shall have a predefined expiration period and be renewed upon expiry.
+  - Secure storage of keys shall be implemented, with AES keys stored in volatile memory and RSA keys in secure, non-volatile storage.
   - A defined strategy for key rotation and revocation shall be included.
 
 - **Session Establishment:**
@@ -74,48 +74,45 @@
 ### Session Management
 
 - **Single Session Handling:**
-  - The server shall be capable of handling only one client session at a time.
+  - The server shall handle only one client session at a time to ensure focused and secure communication.
 
 - **Session Expiration:**
-  - Sessions shall expire after 1 minute of inactivity.
+  - Sessions shall expire after a predefined period of inactivity (e.g., 1 minute) to enhance security.
 
 ### Response Handling
 
 - **Process Client Requests:**
-  - The server shall handle requests for temperature reading and LED control.
+  - The server shall handle requests for temperature reading and LED control efficiently.
+  - The server shall ensure that requests are processed in a timely manner.
 
 - **Security Protocol Compliance:**
-  - The server shall ensure all communications are secured using the defined protocols.
+  - The server shall ensure all communications are secured using HMAC-SHA256, AES-256, and RSA-2048 encryption protocols.
 
 ### Hardware Interface
 
 - **LED Control:**
-  - The server shall interface with the LED based on client requests.
+  - The server shall interface with the LED on the ESP32 based on client requests to toggle its state.
 
 - **Temperature Sensor Integration:**
-  - The server shall retrieve temperature data from the ESP32 core.
+  - The server shall retrieve temperature data from the ESP32's temperature sensor and send it to the client upon request.
 
 ## General Requirements
 
 ### Installation and Setup
 
 - **Installation and Setup:**
-  - The project shall provide instructions for installing the project.
+  - The project shall provide clear instructions for installing the project and its dependencies.
 
 - **Dependencies:**
-  - The project shall list all required Python packages, including pyserial and python-mbedtls.
+  - The project shall list all required Python packages (e.g., pyserial, python-mbedtls) and C++ libraries (e.g., mbedTLS, Arduino Core for ESP32).
 
 - **Environment Setup:**
-  - The project shall provide instructions for setting up the development and execution environment.
+  - The project shall provide detailed instructions for setting up the development and execution environment, including PlatformIO setup for the ESP32-EVB board.
 
 ### Documentation and Testing
 
 - **Comprehensive Documentation:**
   - The project shall include documentation for each module and its functionalities.
-  - The documentation shall include UML Diagrams for the system architecture, sequence diagrams for the communication protocol.
+  - UML diagrams for the system architecture and sequence diagrams for the communication protocol shall be provided.
   - Instructions for setup and usage shall be provided.
   - The documentation shall be comprehensive and easy to understand.
-
-- **Unit Testing:**
-  - The project shall include tests for each major functionality.
-  - Guidelines for running tests shall be provided.
