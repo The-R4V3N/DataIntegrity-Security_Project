@@ -36,15 +36,19 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 - Project Overview
 
-![Project Overview](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/overview.png)
+![Project Overview](/media/overview.png)
 
 - System Architecture UML Diagram
 
-![System Achitecture](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sytem_architecture.png)
+![System Achitecture](/media/system_uml.png)
+
+- Sequence Security Diagram
+
+![Sequence Security Diagram](/media/security_secuence_diagram.png)
 
 - Sequence Diagram
 
-![Sequence Diagram](https://github.com/The-R4V3N/DataIntegrity-Security_Project/blob/master/media/sequence_diagram%20.png)
+![Sequence Diagram](/media/system_sequence_uml.png)
 
 ## Features
 
@@ -73,6 +77,13 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 Execute `platformio run` in the server directory to compile the project.
 
 ### Execute
+
+-**Using Makefile:**
+This project has a Makefile that can be used to build and run the project.
+To buiild and run the server execute `make server` in the root of the project.
+To run the client execute `make client` in the root of the project.
+Additionally, you can run `make clean` to remove all compiled files and cache files.
+You also have the option to use `make .PHONY` to run all the above commands in sequence. Starting with the server, then the client.
 
 -**Run the Server:**
 Execute `platformio run --target upload` to upload the compiled code to the Olimax ESP32-EVB board.
@@ -103,5 +114,7 @@ Execute `python3 -m client.src.client` in the root directory of the project to s
 
 - **Detailed Documentation:**
 Find comprehensive documentation for each module in the `Respective README file` folder.
+- **Client README:** [Client README](client/README.md)
+- **Server README:** [Server README](server/README.md)
 
 ![The-R4V3N](https://github.com/The-R4V3N.png?size=50) More about me can be found on my [Website](https://www.oliver-joisten.se)

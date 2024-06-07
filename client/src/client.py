@@ -1,21 +1,21 @@
-# Autor: Oliver Joisten
-# Desccription: This file contains the client class which is used to connect to the server and send messages to it.
-# It also contains the main function which is used to start the client.
+"""
+    * @File: client.py
+    * @Autor: Oliver Joisten    (contact@oliver-joisten.se)
+    * @Desccription: This file contains the main function which starts the client.
+    * @Version: 1.0
+    * @Created: 2021-06-15
+"""
 
-
-import tkinter as tk
 from client.lib.gui.gui import GUI
-from client.lib.communication.communication import SerialCommunication
-# from client.lib.security.security import Security
+import tkinter as tk
 
 
 def main():
+    """The main function which starts the client."""
     root = tk.Tk()
-    root.title("Client")
-    app = GUI(root)
-    app = SerialCommunication()
-    root.mainloop()
+    app = GUI(root=root)
+    app.mainloop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

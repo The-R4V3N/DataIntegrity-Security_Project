@@ -35,11 +35,14 @@ To set up the client-side application, follow these steps:
 1. Navigate to the root of the project directory in your terminal.
 2. Change to the client directory with the command: `cd client`.
 3. Install all required dependencies by executing: `pip3 install -r requirements.txt`.
+4. Navigate back to the root of the project directory with: `cd ..`.
 
 ## How to Use
 
 Once installation is complete, you can start using the client-side application by running the following command in your terminal:
 
 ```bash
-python3 python3 -m client.src.client
+python3 -m client.src.client
 ```
+
+Before you run the client-side application, ensure that the server-side application is flashed to the micro- controller and running before you try to establish a connection.
