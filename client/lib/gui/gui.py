@@ -13,6 +13,8 @@ import serial.tools.list_ports
 from client.lib.session.session import Session
 
 ports = None
+__GET_TEMP__ = 0x03
+__Toggle_LED__ = 0x02
 
 
 def get_serial_ports():
@@ -130,13 +132,13 @@ class GUI(tk.Frame):
 
     def get_temperature(self):
         if self.session_active:
-            response = self.session.requests(0x03)
+            response = self.session.requests(__GET_TEMP__)
             self.log(response) 
 
 
     def toggle_led(self):
         if self.session_active:
-            response = self.session.requests(0x02)
+            response = self.session.requests(__Toggle_LED__)
             self.log(response)
 
     def error_handling(self, message):
