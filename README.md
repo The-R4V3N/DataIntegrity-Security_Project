@@ -80,7 +80,7 @@ Execute `platformio run` in the server directory to compile the project.
 
 -**Using Makefile:**
 This project has a Makefile that can be used to build and run the project.
-To buiild and run the server execute `make server` in the root of the project.
+To build and run the server execute `make server` in the root of the project.
 To run the client execute `make client` in the root of the project.
 Additionally, you can run `make clean` to remove all compiled files and cache files.
 You also have the option to use `make .PHONY` to run all the above commands in sequence. Starting with the server, then the client.
