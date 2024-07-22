@@ -70,6 +70,7 @@ Examination Project of my Education as Advanced Software Developer Embedded Syst
 
 - **Python 3** with the following librarys: Tkinter, pyserial, python-mbedtls
 - **PlatformIO** (for building and uploading firmware to the ESP32)
+- **ESP32** Used in this Project is a Olimax ESP32 Development Board
 
 ### Building
 
